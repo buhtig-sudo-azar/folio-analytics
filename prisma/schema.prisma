@@ -101,8 +101,10 @@ model Event {
   browserVersion String?
   os            String?
   osVersion     String?
-  deviceType    String?   // desktop, laptop, tablet, mobile
+  deviceType    String?   // desktop, laptop, tablet, mobile, bot
   deviceModel   String?
+  isBot         Boolean   @default(false) // True if visitor is a bot/crawler
+  botName       String?   // Name of the bot (e.g., "Googlebot", "Ahrefs")
   screenRes     String?   // e.g., "1920x1080"
   language      String?
   country       String?
@@ -130,6 +132,7 @@ model Event {
   @@index([timestamp])
   @@index([country])
   @@index([deviceType])
+  @@index([isBot])
   @@index([eventType, timestamp])
   @@index([projectId, timestamp])
 }
@@ -165,6 +168,8 @@ model AnalyticsSession {
   pageViews      Int       @default(0)
   isBounce       Boolean   @default(true) // Single page = bounce
   isNewUser      Boolean   @default(true)
+  isBot          Boolean   @default(false) // True if session is from a bot
+  botName        String?   // Name of the bot
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -173,6 +178,7 @@ model AnalyticsSession {
   @@index([country])
   @@index([deviceType])
   @@index([trafficSource])
+  @@index([isBot])
 }
 
 // Page-level analytics (aggregated from events)

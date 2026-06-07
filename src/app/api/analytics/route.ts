@@ -71,10 +71,19 @@ function getDateFilter(period: string): Date {
 }
 
 async function getOverview(since: Date, projectId?: string | null) {
-  const where: Record<string, unknown> = {
+  // Human-only filter for all real analytics
+  const humanWhere: Record<string, unknown> = {
     timestamp: { gte: since },
+    isBot: false,
   };
-  if (projectId) where.projectId = projectId;
+  if (projectId) humanWhere.projectId = projectId;
+
+  // Bot filter for bot stats
+  const botWhere: Record<string, unknown> = {
+    timestamp: { gte: since },
+    isBot: true,
+  };
+  if (projectId) botWhere.projectId = projectId;
 
   const [
     totalEvents,
@@ -88,55 +97,74 @@ async function getOverview(since: Date, projectId?: string | null) {
     todayEvents,
     weekEvents,
     monthEvents,
+    botEvents,
+    botUniqueUsers,
+    botSessions,
   ] = await Promise.all([
-    db.event.count({ where }),
-    db.event.count({ where: { ...where, eventType: 'page_view' } }),
+    // Human stats
+    db.event.count({ where: humanWhere }),
+    db.event.count({ where: { ...humanWhere, eventType: 'page_view' } }),
     db.event.findMany({
-      where,
+      where: humanWhere,
       select: { userId: true },
       distinct: ['userId'],
     }),
     db.analyticsSession.count({
-      where: { startedAt: { gte: since } },
+      where: { startedAt: { gte: since }, isBot: false },
     }),
-    db.event.count({ where: { ...where, eventType: 'project_view' } }),
-    db.event.count({ where: { ...where, eventType: 'demo_open' } }),
-    db.event.count({ where: { ...where, eventType: 'contact_open' } }),
-    db.event.count({ where: { ...where, eventType: 'external_link_click' } }),
+    db.event.count({ where: { ...humanWhere, eventType: 'project_view' } }),
+    db.event.count({ where: { ...humanWhere, eventType: 'demo_open' } }),
+    db.event.count({ where: { ...humanWhere, eventType: 'contact_open' } }),
+    db.event.count({ where: { ...humanWhere, eventType: 'external_link_click' } }),
     db.event.findMany({
-      where: { ...where, timestamp: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
+      where: { ...humanWhere, timestamp: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
       select: { userId: true },
       distinct: ['userId'],
     }),
     db.event.findMany({
-      where: { ...where, timestamp: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
+      where: { ...humanWhere, timestamp: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
       select: { userId: true },
       distinct: ['userId'],
     }),
     db.event.findMany({
-      where: { ...where, timestamp: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
+      where: { ...humanWhere, timestamp: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
       select: { userId: true },
       distinct: ['userId'],
     }),
+    // Bot stats
+    db.event.count({ where: botWhere }),
+    db.event.findMany({ where: botWhere, select: { userId: true }, distinct: ['userId'] }),
+    db.analyticsSession.count({ where: { startedAt: { gte: since }, isBot: true } }),
   ]);
 
-  // New vs returning visitors (by session isNewUser flag)
+  // New vs returning visitors (human only)
   const [newUserSessions, returningUserSessions] = await Promise.all([
-    db.analyticsSession.count({ where: { startedAt: { gte: since }, isNewUser: true } }),
-    db.analyticsSession.count({ where: { startedAt: { gte: since }, isNewUser: false } }),
+    db.analyticsSession.count({ where: { startedAt: { gte: since }, isNewUser: true, isBot: false } }),
+    db.analyticsSession.count({ where: { startedAt: { gte: since }, isNewUser: false, isBot: false } }),
   ]);
 
   const avgDurationResult = await db.analyticsSession.aggregate({
     _avg: { duration: true },
-    where: { startedAt: { gte: since } },
+    where: { startedAt: { gte: since }, isBot: false },
   });
 
   const [bounceCount, totalSessionsForBounce] = await Promise.all([
-    db.analyticsSession.count({ where: { startedAt: { gte: since }, isBounce: true } }),
-    db.analyticsSession.count({ where: { startedAt: { gte: since } } }),
+    db.analyticsSession.count({ where: { startedAt: { gte: since }, isBounce: true, isBot: false } }),
+    db.analyticsSession.count({ where: { startedAt: { gte: since }, isBot: false } }),
   ]);
 
   const bounceRate = totalSessionsForBounce > 0 ? Math.round((bounceCount / totalSessionsForBounce) * 100) : 0;
+
+  // Top bots
+  const topBots = await db.event.findMany({
+    where: botWhere,
+    select: { botName: true },
+  });
+  const botBreakdown: Record<string, number> = {};
+  for (const b of topBots) {
+    const name = b.botName || 'Unknown';
+    botBreakdown[name] = (botBreakdown[name] || 0) + 1;
+  }
 
   return {
     totalEvents,
@@ -152,21 +180,33 @@ async function getOverview(since: Date, projectId?: string | null) {
     contactOpens,
     linkClicks,
     todayVisitors: todayEvents.length,
-    todaySessions: await db.analyticsSession.count({ where: { startedAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } } }),
+    todaySessions: await db.analyticsSession.count({ where: { startedAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) }, isBot: false } }),
     weekVisitors: weekEvents.length,
     monthVisitors: monthEvents.length,
     conversionRate: pageViews > 0 ? ((projectViews + demoOpens) / pageViews * 100).toFixed(1) : 0,
+    // Bot statistics (separate)
+    botStats: {
+      totalBotEvents: botEvents,
+      uniqueBots: botUniqueUsers.length,
+      botSessions,
+      botBreakdown: Object.entries(botBreakdown)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10),
+    },
   };
 }
 
 async function getVisitsTimeline(since: Date, projectId?: string | null) {
   const where: Record<string, unknown> = {
     timestamp: { gte: since },
+    isBot: false, // Only human visits
+    eventType: 'page_view',
   };
   if (projectId) where.projectId = projectId;
 
   const events = await db.event.findMany({
-    where: { ...where, eventType: 'page_view' },
+    where,
     select: { timestamp: true, userId: true },
     orderBy: { timestamp: 'asc' },
   });
@@ -190,7 +230,7 @@ async function getVisitsTimeline(since: Date, projectId?: string | null) {
 }
 
 async function getGeography(since: Date, projectId?: string | null) {
-  const where: Record<string, unknown> = { timestamp: { gte: since } };
+  const where: Record<string, unknown> = { timestamp: { gte: since }, isBot: false };
   if (projectId) where.projectId = projectId;
 
   const events = await db.event.findMany({
@@ -230,7 +270,7 @@ async function getGeography(since: Date, projectId?: string | null) {
 }
 
 async function getDevices(since: Date, projectId?: string | null) {
-  const where: Record<string, unknown> = { startedAt: { gte: since } };
+  const where: Record<string, unknown> = { startedAt: { gte: since }, isBot: false };
   if (projectId) where.projectId = projectId;
 
   const sessions = await db.analyticsSession.findMany({
@@ -258,7 +298,7 @@ async function getDevices(since: Date, projectId?: string | null) {
 }
 
 async function getBrowsers(since: Date, projectId?: string | null) {
-  const where: Record<string, unknown> = { startedAt: { gte: since } };
+  const where: Record<string, unknown> = { startedAt: { gte: since }, isBot: false };
   if (projectId) where.projectId = projectId;
 
   const sessions = await db.analyticsSession.findMany({
@@ -278,7 +318,7 @@ async function getBrowsers(since: Date, projectId?: string | null) {
 }
 
 async function getOS(since: Date, projectId?: string | null) {
-  const where: Record<string, unknown> = { startedAt: { gte: since } };
+  const where: Record<string, unknown> = { startedAt: { gte: since }, isBot: false };
   if (projectId) where.projectId = projectId;
 
   const sessions = await db.analyticsSession.findMany({
@@ -298,7 +338,7 @@ async function getOS(since: Date, projectId?: string | null) {
 }
 
 async function getTrafficSources(since: Date, projectId?: string | null) {
-  const where: Record<string, unknown> = { startedAt: { gte: since } };
+  const where: Record<string, unknown> = { startedAt: { gte: since }, isBot: false };
   if (projectId) where.projectId = projectId;
 
   const sessions = await db.analyticsSession.findMany({
@@ -324,7 +364,7 @@ async function getTrafficSources(since: Date, projectId?: string | null) {
 }
 
 async function getUTMAnalytics(since: Date, projectId?: string | null) {
-  const where: Record<string, unknown> = { timestamp: { gte: since }, utmSource: { not: null } };
+  const where: Record<string, unknown> = { timestamp: { gte: since }, utmSource: { not: null }, isBot: false };
   if (projectId) where.projectId = projectId;
 
   const events = await db.event.findMany({
@@ -512,7 +552,7 @@ async function getPageAnalytics(since: Date, projectId?: string | null) {
   if (projectId) where.projectId = projectId;
 
   const events = await db.event.findMany({
-    where: { ...where, eventType: 'page_view' },
+    where,
     select: { page: true, userId: true },
   });
 
@@ -537,13 +577,13 @@ async function getRealtime() {
 
   const [recentEvents, recentSessions] = await Promise.all([
     db.event.findMany({
-      where: { timestamp: { gte: fiveMinAgo } },
+      where: { timestamp: { gte: fiveMinAgo }, isBot: false },
       select: { page: true, projectId: true, country: true, eventType: true, userId: true, timestamp: true },
       orderBy: { timestamp: 'desc' },
       take: 100,
     }),
     db.analyticsSession.findMany({
-      where: { lastActivityAt: { gte: fiveMinAgo } },
+      where: { lastActivityAt: { gte: fiveMinAgo }, isBot: false },
       select: { sessionId: true, country: true, deviceType: true },
     }),
   ]);
@@ -564,7 +604,7 @@ async function getRealtime() {
 }
 
 async function getSessionMetrics(since: Date, projectId?: string | null) {
-  const where: Record<string, unknown> = { startedAt: { gte: since } };
+  const where: Record<string, unknown> = { startedAt: { gte: since }, isBot: false };
 
   const [totalSessions, avgDuration, avgDepth, bounceCount, bounceTotal] = await Promise.all([
     db.analyticsSession.count({ where }),

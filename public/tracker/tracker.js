@@ -1,6 +1,7 @@
 /**
- * ADMIN Panel Tracker v1.0
+ * ADMIN Panel Tracker v2.0
  * Embeddable tracking script for ADMIN Panel analytics
+ * Features: bot detection, unique user identification, fingerprint
  *
  * Usage (same domain):
  * <script data-project-id="my-project" src="/tracker/tracker.js"></script>
@@ -24,8 +25,6 @@
   var scriptEl = document.currentScript || document.querySelector('script[src*="tracker"]');
 
   // Determine API endpoint
-  // If cross-domain: config.endpoint must be set
-  // If same-domain: use relative path
   var API_ENDPOINT = config.endpoint ||
     (scriptEl && scriptEl.src ? scriptEl.src.replace(/\/tracker\/tracker\.js.*$/, '/api/track') : '/api/track');
 
@@ -40,7 +39,42 @@
     (scriptEl && scriptEl.getAttribute('data-project-name')) ||
     document.title;
 
-  // Session management
+  // ============================================================
+  // BOT DETECTION — client-side preliminary check
+  // Server will also verify via UA parsing
+  // ============================================================
+  function detectBot() {
+    var ua = navigator.userAgent;
+    if (!ua || ua.length < 10) return { isBot: true, botName: 'empty-ua' };
+    var botPatterns = [
+      /Googlebot/i, /bingbot/i, /Slurp/i, /DuckDuckBot/i, /Baiduspider/i,
+      /YandexBot/i, /YandexMetrika/i, /AhrefsBot/i, /SemrushBot/i,
+      /MJ12bot/i, /DotBot/i, /rogerbot/i, /Screaming Frog/i,
+      /facebookexternalhit/i, /Facebot/i, /Twitterbot/i, /LinkedInBot/i,
+      /Pinterest/i, /Slackbot/i, /Discordbot/i, /TelegramBot/i,
+      /WhatsApp/i, /SkypeUriPreview/i,
+      /GPTBot/i, /ChatGPT-User/i, /CCBot/i, /ClaudeBot/i, /Anthropic-AI/i,
+      /PerplexityBot/i, /Bytespider/i, /cohere-ai/i, /Diffbot/i,
+      /HeadlessChrome/i, /PhantomJS/i, /Selenium/i, /Puppeteer/i, /Playwright/i,
+      /UptimeRobot/i, /Pingdom/i, /NewRelicPinger/i, /StatusCake/i,
+      /curl/i, /wget/i, /python-requests/i, /python-urllib/i,
+      /node-fetch/i, /axios/i, /Go-http-client/i, /Java\//i,
+      /bot\//i, /spider/i, /crawler/i, /scraper/i
+    ];
+    for (var i = 0; i < botPatterns.length; i++) {
+      if (botPatterns[i].test(ua)) {
+        var match = ua.match(botPatterns[i]);
+        return { isBot: true, botName: match ? match[0] : 'Bot' };
+      }
+    }
+    return { isBot: false, botName: null };
+  }
+
+  var botInfo = detectBot();
+
+  // ============================================================
+  // SESSION MANAGEMENT
+  // ============================================================
   function getSessionId() {
     try {
       var stored = localStorage.getItem(SESSION_KEY);
@@ -58,7 +92,9 @@
     return newId;
   }
 
-  // Fingerprint generation (lightweight)
+  // ============================================================
+  // FINGERPRINT — unique browser signature
+  // ============================================================
   function getFingerprint() {
     try {
       var parts = [
@@ -67,7 +103,9 @@
         navigator.language,
         Intl.DateTimeFormat().resolvedOptions().timeZone || '',
         (navigator.hardwareConcurrency || 0).toString(),
-        (navigator.deviceMemory || 0).toString()
+        (navigator.deviceMemory || 0).toString(),
+        screen.colorDepth.toString(),
+        new Date().getTimezoneOffset().toString()
       ];
       var str = parts.join('|');
       var hash = 0;
@@ -82,6 +120,10 @@
     }
   }
 
+  // ============================================================
+  // USER ID — persistent unique identifier
+  // Priority: localStorage userId > fingerprint-based recovery
+  // ============================================================
   function getUserId() {
     try {
       var stored = localStorage.getItem(USER_KEY);
@@ -92,27 +134,27 @@
     return id;
   }
 
-  // Device detection
+  // ============================================================
+  // DEVICE DETECTION — laptop vs desktop vs mobile vs tablet
+  // ============================================================
   function getDeviceType() {
     var ua = navigator.userAgent;
     if (/iPad|Android(?!.*Mobile)/i.test(ua)) return 'tablet';
     if (/Mobile|iPhone|Android.*Mobile/i.test(ua)) return 'mobile';
 
-    // Laptop vs Desktop: use screen resolution heuristics
     var w = screen.width;
     var h = screen.height;
 
-    // macOS = most likely laptop (MacBooks dominate)
+    // macOS = most likely laptop
     if (/Mac OS X/.test(ua)) {
-      if (w === 5120 && h === 2880) return 'desktop'; // iMac/Pro Display XDR
-      if (w === 6016 && h === 3384) return 'desktop'; // Apple Pro Display XDR 6K
-      return 'laptop'; // Most Macs are laptops
+      if (w === 5120 && h === 2880) return 'desktop';
+      if (w === 6016 && h === 3384) return 'desktop';
+      return 'laptop';
     }
 
-    // Windows/Linux: small screen = laptop
-    if (h <= 900) return 'laptop'; // 768, 864, 900 etc
+    // Windows/Linux
+    if (h <= 900) return 'laptop';
     if (h === 1080) {
-      // Scaled resolutions like 1536x864 = laptop with 125%/150% scaling
       var laptopWidths = [1280, 1360, 1366, 1440, 1536, 1600, 1680];
       if (laptopWidths.indexOf(w) !== -1) return 'laptop';
     }
@@ -124,7 +166,9 @@
     return screen.width + 'x' + screen.height;
   }
 
-  // UTM parsing
+  // ============================================================
+  // UTM PARSING
+  // ============================================================
   function getUTMParams() {
     try {
       var params = new URLSearchParams(window.location.search);
@@ -140,7 +184,9 @@
     }
   }
 
-  // Geo detection (using free API)
+  // ============================================================
+  // GEO DETECTION
+  // ============================================================
   var geoCache = null;
   function getGeo() {
     return new Promise(function(resolve) {
@@ -165,7 +211,9 @@
     });
   }
 
-  // Core tracking function
+  // ============================================================
+  // CORE TRACKING FUNCTION
+  // ============================================================
   function track(eventType, eventData) {
     var sessionId = getSessionId();
     var userId = getUserId();
@@ -182,10 +230,12 @@
       projectId: projectId,
       projectName: projectName,
       projectUrl: window.location.origin,
-      deviceType: getDeviceType(),
+      deviceType: botInfo.isBot ? 'bot' : getDeviceType(),
       screenRes: getScreenRes(),
       language: navigator.language,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+      isBot: botInfo.isBot,
+      botName: botInfo.botName,
     }, utm, eventData || {});
 
     if (geoCache) {
@@ -195,7 +245,7 @@
 
     var data = JSON.stringify(payload);
 
-    // Try fetch with keepalive first (supports CORS, works on page unload)
+    // fetch with keepalive (supports CORS, works on page unload)
     try {
       if (typeof fetch === 'function') {
         fetch(API_ENDPOINT, {
@@ -206,14 +256,12 @@
           mode: 'cors',
           credentials: 'omit',
         }).catch(function() {
-          // Fallback to XHR if fetch fails
           sendViaXHR(data);
         });
         return;
       }
     } catch(e) {}
 
-    // XHR fallback
     sendViaXHR(data);
   }
 
@@ -222,21 +270,19 @@
       var xhr = new XMLHttpRequest();
       xhr.open('POST', API_ENDPOINT, true);
       xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.withCredentials = false; // CORS
+      xhr.withCredentials = false;
       xhr.send(data);
     } catch(e) {}
   }
 
+  // ============================================================
+  // BEHAVIOR TRACKING
+  // ============================================================
+
   // Click tracking
   document.addEventListener('click', function(e) {
     var target = e.target.closest ? e.target.closest('a') || e.target : e.target;
-    var selector = '';
-    if (target.id) { selector = '#' + target.id; }
-    else if (target.className && typeof target.className === 'string') {
-      selector = target.tagName.toLowerCase() + '.' + target.className.split(' ').join('.');
-    } else { selector = target.tagName.toLowerCase(); }
 
-    // Track external links
     if (target.tagName === 'A' && target.href) {
       var isExternal = target.hostname !== window.location.hostname;
       if (isExternal) {
@@ -245,7 +291,6 @@
           metadata: { url: target.href, text: (target.textContent || '').slice(0, 50) },
         });
       }
-      // Track demo opens
       if (target.href.includes('demo') || (target.textContent && target.textContent.toLowerCase().includes('demo'))) {
         track('demo_open');
       }
@@ -285,7 +330,9 @@
     if (dur > 0) track('page_hide', { value: dur, eventName: 'time_on_page' });
   });
 
-  // Public API
+  // ============================================================
+  // PUBLIC API
+  // ============================================================
   window.AdminAnalytics = {
     track: track,
     trackEvent: function(name, data) {
@@ -297,10 +344,11 @@
     trackContactFormOpen: function() { track('contact_form_open'); },
     trackFormSubmit: function() { track('form_submit'); },
   };
-  // Backward compatibility
   window.FolioAnalytics = window.AdminAnalytics;
 
-  // Initialize: fetch geo, then track page view
+  // ============================================================
+  // INIT
+  // ============================================================
   getGeo().then(function() {
     track('page_view');
   });

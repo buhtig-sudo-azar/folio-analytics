@@ -15,6 +15,7 @@ import {
   UserPlus,
   UserCheck,
   Repeat,
+  Bot,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -40,6 +41,13 @@ import {
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
 
+interface BotStats {
+  totalBotEvents: number;
+  uniqueBots: number;
+  botSessions: number;
+  botBreakdown: Array<{ name: string; count: number }>;
+}
+
 interface OverviewData {
   totalEvents: number;
   pageViews: number;
@@ -56,6 +64,7 @@ interface OverviewData {
   weekVisitors: number;
   monthVisitors: number;
   conversionRate: string | number;
+  botStats?: BotStats;
 }
 
 export function OverviewSection() {
@@ -106,12 +115,14 @@ export function OverviewSection() {
     { title: 'Ср. длительность', value: formatDuration(overview.avgSessionDuration), icon: Clock, color: 'text-orange-500', bg: 'bg-orange-500/10', hint: 'Среднее время, которое посетитель проводит на сайте за одну сессию' },
     { title: 'Просмотры', value: formatNumber(overview.pageViews), icon: Activity, color: 'text-cyan-500', bg: 'bg-cyan-500/10', hint: 'Общее количество просмотренных страниц. Один заход может включать несколько просмотров' },
     { title: 'Показатель отказов', value: `${overview.bounceRate}%`, icon: MousePointerClick, color: 'text-rose-500', bg: 'bg-rose-500/10', hint: 'Доля заходов, где человек посмотрел одну страницу и ушёл (чем меньше — тем лучше)' },
+    // Bot card — always shown, indicates bot traffic is being tracked
+    { title: 'Ботов', subtitle: overview.botStats?.uniqueBots ? `${overview.botStats.uniqueBots} уникальных` : undefined, value: formatNumber(overview.botStats?.totalBotEvents || 0), icon: Bot, color: 'text-zinc-400', bg: 'bg-zinc-400/10', hint: overview.botStats?.botBreakdown?.length ? `Боты detected: ${overview.botStats.botBreakdown.map(b => `${b.name} (${b.count})`).join(', ')}` : 'Автоматические запросы от ботов, краулеров, скрейперов. Не учитываются в статистике людей' },
   ] : [];
 
   return (
     <div className="space-y-6">
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {statCards.map((card) => {
           const Icon = card.icon;
           return (

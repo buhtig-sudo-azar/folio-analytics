@@ -8,9 +8,123 @@ interface UAInfo {
   osVersion: string;
   deviceType: string;
   deviceModel: string;
+  isBot: boolean;
+  botName: string | null;
+}
+
+// Comprehensive bot/crawler/spider UA patterns
+const BOT_PATTERNS: { pattern: RegExp; name: string }[] = [
+  // Major search engine bots
+  { pattern: /Googlebot/i, name: 'Googlebot' },
+  { pattern: /Google-InspectionTool/i, name: 'Google Inspection' },
+  { pattern: /Google-Site-Verification/i, name: 'Google Verify' },
+  { pattern: /bingbot/i, name: 'Bingbot' },
+  { pattern: /Slurp/i, name: 'Yahoo Slurp' },
+  { pattern: /DuckDuckBot/i, name: 'DuckDuckBot' },
+  { pattern: /Baiduspider/i, name: 'Baiduspider' },
+  { pattern: /YandexBot/i, name: 'YandexBot' },
+  { pattern: /YandexMetrika/i, name: 'Yandex Metrika' },
+
+  // SEO & monitoring tools
+  { pattern: /AhrefsBot/i, name: 'Ahrefs' },
+  { pattern: /SemrushBot/i, name: 'Semrush' },
+  { pattern: /MJ12bot/i, name: 'Majestic' },
+  { pattern: /DotBot/i, name: 'Moz' },
+  { pattern: /rogerbot/i, name: 'Moz Roger' },
+  { pattern: /SeznamBot/i, name: 'Seznam' },
+  { pattern: /Sogou/i, name: 'Sogou' },
+  { pattern: /Exabot/i, name: 'Exalead' },
+  { pattern: /SEOkicks/i, name: 'SEOkicks' },
+  { pattern: /Screaming Frog/i, name: 'Screaming Frog' },
+
+  // Social media crawlers
+  { pattern: /facebookexternalhit/i, name: 'Facebook Crawler' },
+  { pattern: /Facebot/i, name: 'Facebot' },
+  { pattern: /Twitterbot/i, name: 'Twitterbot' },
+  { pattern: /LinkedInBot/i, name: 'LinkedIn Bot' },
+  { pattern: /Pinterest/i, name: 'Pinterest Bot' },
+  { pattern: /Slackbot/i, name: 'Slackbot' },
+  { pattern: /Discordbot/i, name: 'Discord Bot' },
+  { pattern: /TelegramBot/i, name: 'Telegram Bot' },
+  { pattern: /WhatsApp/i, name: 'WhatsApp Link Preview' },
+  { pattern: /SkypeUriPreview/i, name: 'Skype Preview' },
+  { pattern: /Viber/i, name: 'Viber Preview' },
+
+  // AI crawlers
+  { pattern: /GPTBot/i, name: 'OpenAI GPTBot' },
+  { pattern: /ChatGPT-User/i, name: 'ChatGPT' },
+  { pattern: /CCBot/i, name: 'Common Crawl' },
+  { pattern: /ClaudeBot/i, name: 'Claude Bot' },
+  { pattern: /Anthropic-AI/i, name: 'Anthropic AI' },
+  { pattern: /PerplexityBot/i, name: 'Perplexity' },
+  { pattern: /Applebot-Extended/i, name: 'Apple AI' },
+  { pattern: /Bytespider/i, name: 'ByteDance Spider' },
+  { pattern: /cohere-ai/i, name: 'Cohere AI' },
+  { pattern: /Diffbot/i, name: 'Diffbot' },
+
+  // Generic bot patterns
+  { pattern: /bot\//i, name: 'Generic Bot' },
+  { pattern: /bot$/i, name: 'Generic Bot' },
+  { pattern: /spider/i, name: 'Generic Spider' },
+  { pattern: /crawler/i, name: 'Generic Crawler' },
+  { pattern: /scraper/i, name: 'Generic Scraper' },
+  { pattern: /fetcher/i, name: 'Generic Fetcher' },
+  { pattern: /preview/i, name: 'Link Preview' },
+
+  // Headless browsers & automation tools
+  { pattern: /HeadlessChrome/i, name: 'Headless Chrome' },
+  { pattern: /PhantomJS/i, name: 'PhantomJS' },
+  { pattern: /Selenium/i, name: 'Selenium' },
+  { pattern: /Puppeteer/i, name: 'Puppeteer' },
+  { pattern: /Playwright/i, name: 'Playwright' },
+  { pattern: /wkhtmlto/i, name: 'wkhtmltopdf' },
+
+  // Monitoring & uptime tools
+  { pattern: /UptimeRobot/i, name: 'UptimeRobot' },
+  { pattern: /Pingdom/i, name: 'Pingdom' },
+  { pattern: /NewRelicPinger/i, name: 'New Relic' },
+  { pattern: /StatusCake/i, name: 'StatusCake' },
+  { pattern: /Jetpack/i, name: 'Jetpack Monitor' },
+  { pattern: /Site24x7/i, name: 'Site24x7' },
+  { pattern: /Monitority/i, name: 'Monitority' },
+
+  // Feed readers
+  { pattern: /Feedfetcher/i, name: 'Feed Fetcher' },
+  { pattern: /RSS/i, name: 'RSS Reader' },
+
+  // Misc bots
+  { pattern: /curl/i, name: 'curl' },
+  { pattern: /wget/i, name: 'wget' },
+  { pattern: /python-requests/i, name: 'Python Requests' },
+  { pattern: /python-urllib/i, name: 'Python urllib' },
+  { pattern: /node-fetch/i, name: 'Node Fetch' },
+  { pattern: /axios/i, name: 'Axios' },
+  { pattern: /http.rb/i, name: 'Ruby HTTP' },
+  { pattern: /Go-http-client/i, name: 'Go HTTP Client' },
+  { pattern: /Java\//i, name: 'Java HTTP' },
+];
+
+/**
+ * Detect if a User-Agent belongs to a bot/crawler/scraper.
+ * Returns { isBot, botName } — botName is null if not a bot.
+ */
+export function detectBot(ua: string): { isBot: boolean; botName: string | null } {
+  if (!ua) return { isBot: true, botName: 'empty-ua' };
+
+  // Empty or very short UA strings are suspicious
+  if (ua.length < 10) return { isBot: true, botName: 'short-ua' };
+
+  for (const { pattern, name } of BOT_PATTERNS) {
+    if (pattern.test(ua)) {
+      return { isBot: true, botName: name };
+    }
+  }
+
+  return { isBot: false, botName: null };
 }
 
 export function parseUserAgent(ua: string): UAInfo {
+  const botInfo = detectBot(ua);
   const result: UAInfo = {
     browser: 'Unknown',
     browserVersion: '',
@@ -18,7 +132,16 @@ export function parseUserAgent(ua: string): UAInfo {
     osVersion: '',
     deviceType: 'desktop',
     deviceModel: '',
+    isBot: botInfo.isBot,
+    botName: botInfo.botName,
   };
+
+  // If it's a bot, skip detailed parsing
+  if (botInfo.isBot) {
+    result.browser = botInfo.botName || 'Bot';
+    result.deviceType = 'bot';
+    return result;
+  }
 
   if (!ua) return result;
 
