@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useRef, KeyboardEvent } from 'react';
-import { Send } from 'lucide-react';
+import { useState, KeyboardEvent } from 'react';
+import { Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useChatStore } from '@/lib/analytics/chat-store';
+import { useModelStore } from '@/lib/analytics/model-store';
 import { SYSTEM_PROMPT } from '@/lib/analytics/chat-prompt';
 
 export function ChatInput() {
   const [input, setInput] = useState('');
   const { addMessage, appendToLastMessage, setLoading, isLoading, messages } = useChatStore();
+  const { currentModel, apiToken, markModelRateLimited } = useModelStore();
 
   const handleSubmit = async () => {
     const text = input.trim();
@@ -28,11 +30,18 @@ export function ChatInput() {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: chatMessages, systemPrompt: SYSTEM_PROMPT }),
+        body: JSON.stringify({
+          messages: chatMessages,
+          systemPrompt: SYSTEM_PROMPT,
+          model: currentModel,
+          apiToken: apiToken || undefined,
+        }),
       });
 
       if (!response.ok) {
-        addMessage({ role: 'assistant', content: 'Ошибка при обращении к AI. Попробуйте ещё раз.' });
+        const errData = await response.json().catch(() => ({}));
+        const errMsg = errData.error || 'Ошибка при обращении к AI. Попробуйте ещё раз.';
+        addMessage({ role: 'assistant', content: `⚠️ ${errMsg}` });
         setLoading(false);
         return;
       }
@@ -46,7 +55,7 @@ export function ChatInput() {
         return;
       }
 
-      // Add empty assistant message
+      // Add empty assistant message (will get streaming-cursor via isStreaming)
       addMessage({ role: 'assistant', content: '' });
 
       let fullContent = '';
@@ -59,19 +68,28 @@ export function ChatInput() {
         const lines = chunk.split('\n');
 
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6).trim();
-            if (data === '[DONE]') continue;
-            try {
-              const parsed = JSON.parse(data);
-              const content = parsed.choices?.[0]?.delta?.content;
-              if (content) {
-                fullContent += content;
-                appendToLastMessage(content);
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') continue;
+
+          try {
+            const parsed = JSON.parse(data);
+
+            // Handle model_info custom event
+            if (parsed.type === 'model_info' && parsed.exhausted?.length) {
+              for (const m of parsed.exhausted) {
+                markModelRateLimited(m, 'rate_limited');
               }
-            } catch {
-              // skip non-JSON lines
             }
+
+            // Handle normal SSE content
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              fullContent += content;
+              appendToLastMessage(content);
+            }
+          } catch {
+            // skip non-JSON or partial
           }
         }
       }
@@ -95,7 +113,7 @@ export function ChatInput() {
 
   return (
     <div className="p-3 border-t border-border">
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-end">
         <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -109,9 +127,9 @@ export function ChatInput() {
           size="icon"
           onClick={handleSubmit}
           disabled={isLoading || !input.trim()}
-          className="shrink-0 bg-emerald-600 hover:bg-emerald-700"
+          className="shrink-0 bg-gradient-to-br from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white shadow-sm"
         >
-          <Send className="h-4 w-4" />
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         </Button>
       </div>
     </div>
