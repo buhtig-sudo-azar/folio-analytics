@@ -4,7 +4,7 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-// ─── Custom Tooltip system: double-click to show, positioned at cursor ───
+// ─── Custom Tooltip: double-click → appears at cursor position ───
 //
 // Usage (same API as before):
 //   <Tooltip>
@@ -12,31 +12,50 @@ import { cn } from "@/lib/utils"
 //     <TooltipContent>Подсказка</TooltipContent>
 //   </Tooltip>
 //
-// How it works:
+// Behavior:
 //   - Hover does nothing
-//   - Double-click on trigger → tooltip appears at cursor position
-//   - Auto-closes after 4 seconds, on click outside, or Escape
-//   - Never blocks clicks (pointer-events-none on the tip)
+//   - Double-click on trigger → tooltip pops up at cursor
+//   - Auto-closes after 4s, on click outside, or Escape
+//   - Never blocks anything
 
-// Context to pass content between Trigger and Tooltip
-const TooltipContentContext = React.createContext<React.MutableRefObject<React.ReactNode | null>>({ current: null })
+type TooltipState = { open: boolean; x: number; y: number }
+
+const TooltipContext = React.createContext<{
+  open: boolean
+  show: (x: number, y: number) => void
+  close: () => void
+}>({ open: false, show: () => {}, close: () => {} })
 
 function Tooltip({ children }: { children: React.ReactNode }) {
-  const contentRef = React.useRef<React.ReactNode | null>(null)
-  const [state, setState] = React.useState<{ open: boolean; x: number; y: number }>({ open: false, x: 0, y: 0 })
+  const [state, setState] = React.useState<TooltipState>({ open: false, x: 0, y: 0 })
   const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
-  const tipRef = React.useRef<HTMLDivElement>(null)
 
   const close = React.useCallback(() => {
     setState((s) => ({ ...s, open: false }))
     if (timeoutRef.current) clearTimeout(timeoutRef.current)
   }, [])
 
-  const openAt = React.useCallback((x: number, y: number) => {
+  const show = React.useCallback((x: number, y: number) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current)
     setState({ open: true, x, y })
     timeoutRef.current = setTimeout(close, 4000)
   }, [close])
+
+  const ctx = React.useMemo(() => ({ open: state.open, show, close }), [state.open, show, close])
+
+  // Separate content from trigger
+  let contentChildren: React.ReactNode[] = []
+  let otherChildren: React.ReactNode[] = []
+
+  React.Children.forEach(children, (child) => {
+    if (React.isValidElement(child) && child.type === TooltipContent) {
+      contentChildren.push(child)
+    } else {
+      otherChildren.push(child)
+    }
+  })
+
+  const tipRef = React.useRef<HTMLDivElement>(null)
 
   // Close on click outside or Escape
   React.useEffect(() => {
@@ -53,69 +72,71 @@ function Tooltip({ children }: { children: React.ReactNode }) {
     }
   }, [state.open, close])
 
-  // Separate trigger children from content children
-  let triggerEl: React.ReactNode = null
-  let contentEl: React.ReactNode = null
-
-  React.Children.forEach(children, (child) => {
-    if (!React.isValidElement(child)) return
-    if (child.type === TooltipContent) {
-      contentEl = child
-    } else {
-      triggerEl = child
-    }
-  })
-
-  const handleDoubleClick = React.useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      openAt(e.clientX, e.clientY)
-    },
-    [openAt]
-  )
-
-  const style: React.CSSProperties = state.open
+  const tipStyle: React.CSSProperties = state.open
     ? { position: 'fixed', left: state.x, top: state.y - 12, transform: 'translate(-50%, -100%)' }
     : {}
 
   return (
-    <TooltipContentContext.Provider value={contentRef}>
-      <span onDoubleClick={handleDoubleClick} className="contents">
-        {triggerEl}
-      </span>
+    <TooltipContext.Provider value={ctx}>
+      {otherChildren}
       {state.open && (
         <div
           ref={tipRef}
-          style={style}
+          style={tipStyle}
           className={cn(
             "pointer-events-auto z-50 w-fit max-w-[300px] rounded-lg px-3 py-2 text-xs text-balance shadow-lg select-none",
             "bg-black/70 dark:bg-white/15 backdrop-blur-md text-foreground border border-white/10 dark:border-white/5",
             "animate-in fade-in-0 zoom-in-95 duration-150"
           )}
         >
-          {contentEl ? (contentEl as React.ReactElement).props.children : null}
+          {contentChildren.map((child, i) => {
+            if (React.isValidElement(child)) {
+              return (child as React.ReactElement).props.children
+            }
+            return null
+          })}
         </div>
       )}
-    </TooltipContentContext.Provider>
+    </TooltipContext.Provider>
   )
 }
 
-// TooltipTrigger — just a passthrough wrapper, the real logic is in Tooltip
+// TooltipTrigger — passes onDoubleClick into child element
 function TooltipTrigger({
   children,
-  ...props
-}: React.PropsWithChildren<Record<string, unknown>>) {
-  return <>{children}</>
+  asChild,
+  ...rest
+}: React.PropsWithChildren<{ asChild?: boolean; [key: string]: unknown }>) {
+  const { show } = React.useContext(TooltipContext)
+
+  const handleDoubleClick = React.useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      show(e.clientX, e.clientY)
+    },
+    [show]
+  )
+
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
+      onDoubleClick: handleDoubleClick,
+    })
+  }
+
+  return (
+    <span onDoubleClick={handleDoubleClick} className="contents" {...rest}>
+      {children}
+    </span>
+  )
 }
 
-// TooltipContent — just wraps children, the real rendering is in Tooltip
+// TooltipContent — just wraps content, Tooltip renders it
 function TooltipContent({
   children,
-  className,
   ...props
 }: React.PropsWithChildren<{ className?: string; side?: string; sideOffset?: number; align?: string; [key: string]: unknown }>) {
-  // This component doesn't render itself — Tooltip extracts its children
+  // Doesn't render itself — Tooltip extracts children
   return null
 }
 
