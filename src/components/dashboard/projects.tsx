@@ -184,36 +184,49 @@ export function ProjectsSection() {
                   <DialogHeader>
                     <DialogTitle>Подключить новый проект</DialogTitle>
                   </DialogHeader>
+                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-xs text-muted-foreground">
+                    Можно отслеживать <strong className="text-foreground">любой сайт</strong> в интернете — GitHub Pages, Vercel, Netlify, WordPress, Tilda, собственный сервер, витрина на Яндекс.Маркете — что угодно. Просто вставьте трекер-код на нужный сайт.
+                  </div>
                   <div className="space-y-4">
-                    <div>
-                      <Label>Project ID *</Label>
-                      <Input
-                        placeholder="my-project"
-                        value={newProject.projectId}
-                        onChange={(e) => setNewProject(p => ({ ...p, projectId: e.target.value.replace(/\s/g, '-') }))}
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">Уникальный идентификатор (латиница, без пробелов)</p>
-                    </div>
                     <div>
                       <Label>Название проекта *</Label>
                       <Input
-                        placeholder="Мой проект"
+                        placeholder="Мой сайт, Магазин, Блог..."
                         value={newProject.name}
-                        onChange={(e) => setNewProject(p => ({ ...p, name: e.target.value }))}
+                        onChange={(e) => {
+                          const name = e.target.value;
+                          const autoId = name
+                            .toLowerCase()
+                            .replace(/[^\wа-яё]/gi, '-')
+                            .replace(/-+/g, '-')
+                            .replace(/^-|-$/g, '');
+                          setNewProject(p => ({ ...p, name, projectId: p.projectId || autoId }));
+                        }}
                       />
+                      <p className="text-xs text-muted-foreground mt-1">Любое имя на любом языке — как вам удобно</p>
                     </div>
                     <div>
-                      <Label>URL проекта</Label>
+                      <Label>Технический ID *</Label>
                       <Input
-                        placeholder="https://example.com"
+                        placeholder="my-site, online-shop, company-landing"
+                        value={newProject.projectId}
+                        onChange={(e) => setNewProject(p => ({ ...p, projectId: e.target.value.replace(/\s/g, '-') }))}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Латиница и дефисы — это внутренний идентификатор, нужен только для системы. Автоматически генерируется из названия</p>
+                    </div>
+                    <div>
+                      <Label>URL проекта *</Label>
+                      <Input
+                        placeholder="https://example.com, https://myshop.ru, https://tilda.cc/mysite..."
                         value={newProject.url}
                         onChange={(e) => setNewProject(p => ({ ...p, url: e.target.value }))}
                       />
+                      <p className="text-xs text-muted-foreground mt-1">Адрес вашего сайта — любого! Не обязательно GitHub</p>
                     </div>
                     <div>
                       <Label>Описание</Label>
                       <Textarea
-                        placeholder="Краткое описание проекта"
+                        placeholder="Краткое описание проекта (необязательно)"
                         value={newProject.description}
                         onChange={(e) => setNewProject(p => ({ ...p, description: e.target.value }))}
                       />
