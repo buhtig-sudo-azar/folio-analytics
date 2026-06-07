@@ -5,6 +5,7 @@ import { sectionLabels, sectionDescriptions } from '@/lib/analytics/api';
 import {
   LayoutDashboard,
   Activity,
+  Users,
   FolderKanban,
   Globe,
   Monitor,
@@ -39,6 +40,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 const navItems: { section: Section; icon: React.ElementType; label?: string }[] = [
   { section: 'overview', icon: LayoutDashboard },
   { section: 'realtime', icon: Activity },
+  { section: 'visitors', icon: Users },
   { section: 'projects', icon: FolderKanban },
   { section: 'geography', icon: Globe },
   { section: 'devices', icon: Monitor },

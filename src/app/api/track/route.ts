@@ -18,6 +18,32 @@ export async function OPTIONS() {
   });
 }
 
+// Behavioral signal thresholds for human verification
+// A visitor with low behavioral score who has no mouse/keyboard activity
+// and hasn't scrolled is likely a bot even if UA looks normal
+function evaluateBehavior(behavior: {
+  mouse?: number;
+  keys?: number;
+  touch?: number;
+  scroll?: number;
+  clicks?: number;
+  score?: number;
+}): { isHuman: boolean; confidence: number } {
+  const score = behavior.score || 0;
+  const hasMouse = (behavior.mouse || 0) > 0;
+  const hasKeys = (behavior.keys || 0) > 0;
+  const hasTouch = (behavior.touch || 0) > 0;
+  const hasScroll = (behavior.scroll || 0) > 0;
+
+  // No interaction at all after a page_view = suspicious
+  // But first page_view won't have interaction yet, so only check on subsequent events
+  if (score >= 2) return { isHuman: true, confidence: 0.9 };
+  if (score === 1) return { isHuman: true, confidence: 0.6 };
+  // score === 0 could be a bot OR a very fast page_view
+  // We don't override UA-based bot detection with this
+  return { isHuman: false, confidence: 0.3 };
+}
+
 // POST /api/track - Collect analytics events from ANY website
 export async function POST(req: NextRequest) {
   try {
@@ -43,6 +69,8 @@ export async function POST(req: NextRequest) {
       language,
       timezone: clientTimezone,
       country: clientCountry,
+      countryCode: clientCountryCode,
+      region: clientRegion,
       city: clientCity,
       projectId: rawProjectId,
       projectName,
@@ -51,6 +79,12 @@ export async function POST(req: NextRequest) {
       metadata,
       isBot: clientIsBot,
       botName: clientBotName,
+      behavior: clientBehavior,
+      platform: clientPlatform,
+      cookieEnabled: clientCookieEnabled,
+      doNotTrack: clientDoNotTrack,
+      colorDepth: clientColorDepth,
+      pixelRatio: clientPixelRatio,
     } = body;
 
     // Parse user agent server-side — this is the authoritative check
@@ -59,8 +93,20 @@ export async function POST(req: NextRequest) {
     const serverBotInfo = detectBot(uaString);
 
     // Server-side bot detection takes priority over client
-    const isBot = serverBotInfo.isBot || !!clientIsBot;
-    const botName = serverBotInfo.isBot ? serverBotInfo.botName : (clientBotName || null);
+    let isBot = serverBotInfo.isBot || !!clientIsBot;
+    let botName = serverBotInfo.isBot ? serverBotInfo.botName : (clientBotName || null);
+
+    // Behavioral verification: if UA doesn't look like a bot but behavior
+    // is completely non-human AND the event is NOT the first page_view,
+    // mark as suspicious bot
+    if (!isBot && clientBehavior && eventType !== 'page_view') {
+      const behaviorResult = evaluateBehavior(clientBehavior);
+      if (!behaviorResult.isHuman && behaviorResult.confidence < 0.2) {
+        // Very suspicious — likely a headless browser that spoofed its UA
+        isBot = true;
+        botName = botName || 'behavior-suspicious';
+      }
+    }
 
     const browser = clientBrowser || uaInfo.browser;
     const os = clientOs || uaInfo.os;
@@ -82,20 +128,18 @@ export async function POST(req: NextRequest) {
 
     if (!userId && fingerprint) {
       // No localStorage userId — try to match by fingerprint in recent events
-      // Use a more efficient query: search by fingerprint in metadata
-      // Only look at recent events (last 30 days) for performance
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const existingEvent = await db.event.findFirst({
         where: {
           metadata: { contains: fingerprint },
           timestamp: { gte: thirtyDaysAgo },
-          isBot: false, // Don't match bot events
+          isBot: false,
         },
         select: { userId: true },
         orderBy: { timestamp: 'desc' },
       });
       if (existingEvent?.userId) {
-        userId = existingEvent.userId; // Restore the known user ID
+        userId = existingEvent.userId;
       }
     }
     if (!userId) {
@@ -147,6 +191,20 @@ export async function POST(req: NextRequest) {
     // Classify traffic source
     const trafficInfo = classifyTrafficSource(referrer, utmSource);
 
+    // Build metadata with enhanced fingerprint data
+    const metadataObj = {
+      ...(typeof metadata === 'object' ? metadata : {}),
+      fp: fingerprint,
+      // Store behavioral data for analysis
+      behavior: clientBehavior || null,
+      // Store platform details for user profiling
+      platform: clientPlatform || null,
+      cookieEnabled: clientCookieEnabled ?? null,
+      doNotTrack: clientDoNotTrack || null,
+      colorDepth: clientColorDepth || null,
+      pixelRatio: clientPixelRatio || null,
+    };
+
     // Create the event — always store, even bot events (for statistics)
     const event = await db.event.create({
       data: {
@@ -169,8 +227,8 @@ export async function POST(req: NextRequest) {
         screenRes: screenRes || null,
         language: language || null,
         country: clientCountry || null,
-        countryCode: null,
-        region: null,
+        countryCode: clientCountryCode || null,
+        region: clientRegion || null,
         city: clientCity || null,
         utmSource: utmSource || null,
         utmMedium: utmMedium || null,
@@ -178,7 +236,7 @@ export async function POST(req: NextRequest) {
         utmContent: utmContent || null,
         utmTerm: utmTerm || null,
         value: value || null,
-        metadata: JSON.stringify({ ...(typeof metadata === 'object' ? metadata : {}), fp: fingerprint }),
+        metadata: JSON.stringify(metadataObj),
         projectId: projectDbId,
       },
     });
@@ -220,8 +278,9 @@ export async function POST(req: NextRequest) {
             screenRes: screenRes || null,
             language: language || null,
             country: clientCountry || null,
-            region: null,
+            region: clientRegion || null,
             city: clientCity || null,
+            countryCode: clientCountryCode || null,
             referrer: referrer || null,
             utmSource: utmSource || null,
             utmMedium: utmMedium || null,
@@ -252,7 +311,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { success: true, eventId: event.id, isBot },
+      { success: true, eventId: event.id, isBot, userId },
       { headers: CORS_HEADERS }
     );
   } catch (error) {
@@ -275,7 +334,6 @@ async function updateDailyStats(date: string, projectId: string | null, eventTyp
 
     // For non-bot events, recalculate unique visitors accurately
     if (!isBot && eventType === 'page_view') {
-      // Count unique human visitors today
       const startOfDay = new Date(date + 'T00:00:00.000Z');
       const endOfDay = new Date(date + 'T23:59:59.999Z');
       const uniqueHumanVisitors = await db.event.findMany({
@@ -290,7 +348,6 @@ async function updateDailyStats(date: string, projectId: string | null, eventTyp
       });
       updateData.uniqueVisitors = uniqueHumanVisitors.length;
 
-      // Count new users (first event ever for this userId)
       const allTodaySessions = await db.analyticsSession.findMany({
         where: {
           startedAt: { gte: startOfDay, lte: endOfDay },

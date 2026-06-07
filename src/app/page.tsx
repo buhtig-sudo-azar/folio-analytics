@@ -5,6 +5,7 @@ import { DashboardSidebar } from '@/components/dashboard/sidebar';
 import { DashboardHeader } from '@/components/dashboard/header';
 import { OverviewSection } from '@/components/dashboard/overview';
 import { RealtimeSection } from '@/components/dashboard/realtime';
+import { VisitorsSection } from '@/components/dashboard/visitors';
 import { ProjectsSection } from '@/components/dashboard/projects';
 import { GeographySection } from '@/components/dashboard/geography';
 import { DevicesSection } from '@/components/dashboard/devices';
@@ -28,6 +29,7 @@ export default function Home() {
     switch (activeSection) {
       case 'overview': return <OverviewSection />;
       case 'realtime': return <RealtimeSection />;
+      case 'visitors': return <VisitorsSection />;
       case 'projects': return <ProjectsSection />;
       case 'geography': return <GeographySection />;
       case 'devices': return <DevicesSection />;

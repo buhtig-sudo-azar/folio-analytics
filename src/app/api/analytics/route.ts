@@ -43,6 +43,8 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(await getPageAnalytics(dateFilter, projectId));
       case 'realtime':
         return NextResponse.json(await getRealtime());
+      case 'visitors':
+        return NextResponse.json(await getVisitors(dateFilter, projectId, searchParams));
       case 'sessions':
         return NextResponse.json(await getSessionMetrics(dateFilter, projectId));
       case 'comparison':
@@ -619,6 +621,161 @@ async function getSessionMetrics(since: Date, projectId?: string | null) {
     avgDuration: Math.round(avgDuration._avg.duration || 0),
     avgPageDepth: Math.round((avgDepth._avg.pageViews || 0) * 10) / 10,
     bounceRate: bounceTotal > 0 ? Math.round((bounceCount / bounceTotal) * 100) : 0,
+  };
+}
+
+async function getVisitors(since: Date, projectId: string | null | undefined, searchParams: URLSearchParams) {
+  const filter = searchParams.get('filter') || 'all'; // all | humans | bots | new | returning
+  const search = searchParams.get('search') || '';
+  const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 200);
+  const offset = parseInt(searchParams.get('offset') || '0');
+
+  // Build where clause for sessions
+  const sessionWhere: Record<string, unknown> = {
+    startedAt: { gte: since },
+  };
+  if (projectId) sessionWhere.projectIds = { contains: projectId };
+
+  // Apply filter
+  if (filter === 'humans') sessionWhere.isBot = false;
+  else if (filter === 'bots') sessionWhere.isBot = true;
+  else if (filter === 'new') { sessionWhere.isNewUser = true; sessionWhere.isBot = false; }
+  else if (filter === 'returning') { sessionWhere.isNewUser = false; sessionWhere.isBot = false; }
+  // 'all' — no filter on isBot
+
+  // Get unique users with their latest session data
+  const sessions = await db.analyticsSession.findMany({
+    where: sessionWhere,
+    select: {
+      userId: true,
+      sessionId: true,
+      browser: true,
+      os: true,
+      deviceType: true,
+      screenRes: true,
+      language: true,
+      country: true,
+      countryCode: true,
+      region: true,
+      city: true,
+      trafficSource: true,
+      trafficName: true,
+      referrer: true,
+      isBot: true,
+      botName: true,
+      isNewUser: true,
+      startedAt: true,
+      lastActivityAt: true,
+      duration: true,
+      pageViews: true,
+      isBounce: true,
+    },
+    orderBy: { lastActivityAt: 'desc' },
+    take: limit,
+    skip: offset,
+  });
+
+  // Aggregate per-unique-user data
+  const userMap = new Map<string, {
+    userId: string;
+    sessions: number;
+    firstSeen: Date;
+    lastSeen: Date;
+    browser: string | null;
+    os: string | null;
+    deviceType: string | null;
+    screenRes: string | null;
+    language: string | null;
+    country: string | null;
+    countryCode: string | null;
+    region: string | null;
+    city: string | null;
+    trafficSource: string | null;
+    trafficName: string | null;
+    isBot: boolean;
+    botName: string | null;
+    isNewUser: boolean;
+    totalDuration: number;
+    totalPages: number;
+    bounces: number;
+  }>();
+
+  for (const s of sessions) {
+    const existing = userMap.get(s.userId);
+    if (existing) {
+      existing.sessions++;
+      if (s.startedAt < existing.firstSeen) existing.firstSeen = s.startedAt;
+      if (s.lastActivityAt > existing.lastSeen) existing.lastSeen = s.lastActivityAt;
+      existing.totalDuration += s.duration;
+      existing.totalPages += s.pageViews;
+      if (s.isBounce) existing.bounces++;
+      // Keep isBot if ANY session is bot
+      if (s.isBot) existing.isBot = true;
+    } else {
+      userMap.set(s.userId, {
+        userId: s.userId,
+        sessions: 1,
+        firstSeen: s.startedAt,
+        lastSeen: s.lastActivityAt,
+        browser: s.browser,
+        os: s.os,
+        deviceType: s.deviceType,
+        screenRes: s.screenRes,
+        language: s.language,
+        country: s.country,
+        countryCode: s.countryCode,
+        region: s.region,
+        city: s.city,
+        trafficSource: s.trafficSource,
+        trafficName: s.trafficName,
+        isBot: s.isBot,
+        botName: s.botName,
+        isNewUser: s.isNewUser,
+        totalDuration: s.duration,
+        totalPages: s.pageViews,
+        bounces: s.isBounce ? 1 : 0,
+      });
+    }
+  }
+
+  // Convert to array and apply search
+  let visitors = Array.from(userMap.values());
+
+  if (search) {
+    const q = search.toLowerCase();
+    visitors = visitors.filter(v =>
+      v.userId.toLowerCase().includes(q) ||
+      (v.country && v.country.toLowerCase().includes(q)) ||
+      (v.city && v.city.toLowerCase().includes(q)) ||
+      (v.browser && v.browser.toLowerCase().includes(q)) ||
+      (v.os && v.os.toLowerCase().includes(q)) ||
+      (v.botName && v.botName.toLowerCase().includes(q)) ||
+      (v.trafficName && v.trafficName.toLowerCase().includes(q))
+    );
+  }
+
+  // Count totals for pagination
+  const totalHumans = visitors.filter(v => !v.isBot).length;
+  const totalBots = visitors.filter(v => v.isBot).length;
+  const totalNew = visitors.filter(v => v.isNewUser && !v.isBot).length;
+  const totalReturning = visitors.filter(v => !v.isNewUser && !v.isBot).length;
+
+  return {
+    visitors: visitors.map(v => ({
+      ...v,
+      firstSeen: v.firstSeen.toISOString(),
+      lastSeen: v.lastSeen.toISOString(),
+      avgDuration: v.sessions > 0 ? Math.round(v.totalDuration / v.sessions) : 0,
+    })),
+    totals: {
+      all: visitors.length,
+      humans: totalHumans,
+      bots: totalBots,
+      new: totalNew,
+      returning: totalReturning,
+    },
+    limit,
+    offset,
   };
 }
 

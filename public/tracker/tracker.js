@@ -1,7 +1,8 @@
 /**
- * ADMIN Panel Tracker v2.0
+ * ADMIN Panel Tracker v3.0
  * Embeddable tracking script for ADMIN Panel analytics
- * Features: bot detection, unique user identification, fingerprint
+ * Features: enhanced bot detection, unique user identification,
+ *           Canvas/WebGL fingerprint, behavioral signals
  *
  * Usage (same domain):
  * <script data-project-id="my-project" src="/tracker/tracker.js"></script>
@@ -40,12 +41,13 @@
     document.title;
 
   // ============================================================
-  // BOT DETECTION — client-side preliminary check
+  // BOT DETECTION — enhanced client-side preliminary check
   // Server will also verify via UA parsing
   // ============================================================
   function detectBot() {
     var ua = navigator.userAgent;
     if (!ua || ua.length < 10) return { isBot: true, botName: 'empty-ua' };
+
     var botPatterns = [
       /Googlebot/i, /bingbot/i, /Slurp/i, /DuckDuckBot/i, /Baiduspider/i,
       /YandexBot/i, /YandexMetrika/i, /AhrefsBot/i, /SemrushBot/i,
@@ -55,11 +57,15 @@
       /WhatsApp/i, /SkypeUriPreview/i,
       /GPTBot/i, /ChatGPT-User/i, /CCBot/i, /ClaudeBot/i, /Anthropic-AI/i,
       /PerplexityBot/i, /Bytespider/i, /cohere-ai/i, /Diffbot/i,
+      /Applebot-Extended/i, /Bytespider/i,
       /HeadlessChrome/i, /PhantomJS/i, /Selenium/i, /Puppeteer/i, /Playwright/i,
+      /wkhtmlto/i,
       /UptimeRobot/i, /Pingdom/i, /NewRelicPinger/i, /StatusCake/i,
+      /Jetpack/i, /Site24x7/i, /Monitority/i,
       /curl/i, /wget/i, /python-requests/i, /python-urllib/i,
-      /node-fetch/i, /axios/i, /Go-http-client/i, /Java\//i,
-      /bot\//i, /spider/i, /crawler/i, /scraper/i
+      /node-fetch/i, /axios/i, /Go-http-client/i, /Java\//i, /http.rb/i,
+      /bot\//i, /bot$/i, /spider/i, /crawler/i, /scraper/i, /fetcher/i,
+      /Feedfetcher/i, /RSS/i
     ];
     for (var i = 0; i < botPatterns.length; i++) {
       if (botPatterns[i].test(ua)) {
@@ -67,6 +73,50 @@
         return { isBot: true, botName: match ? match[0] : 'Bot' };
       }
     }
+
+    // Advanced bot signals — check automation indicators
+    var automationSignals = 0;
+
+    // navigator.webdriver = true means controlled by automation
+    try {
+      if (navigator.webdriver === true) automationSignals++;
+    } catch(e) {}
+
+    // Missing standard browser APIs that bots usually don't have
+    try {
+      if (!window.requestAnimationFrame) automationSignals++;
+    } catch(e) { automationSignals++; }
+
+    try {
+      if (!window.IntersectionObserver) automationSignals++;
+    } catch(e) { automationSignals++; }
+
+    // PhantomJS-specific
+    try {
+      if (window._phantom || window.__phantomas) {
+        return { isBot: true, botName: 'PhantomJS' };
+      }
+    } catch(e) {}
+
+    // NightmareJS-specific
+    try {
+      if (window.__nightmare) {
+        return { isBot: true, botName: 'NightmareJS' };
+      }
+    } catch(e) {}
+
+    // Cesium-specific (puppeteer-extra-stealth sometimes leaves traces)
+    try {
+      if (window.callPhantom || window._selenium || window.__selenium_unwrapped) {
+        return { isBot: true, botName: 'Automation' };
+      }
+    } catch(e) {}
+
+    // Too many automation signals = likely bot
+    if (automationSignals >= 2) {
+      return { isBot: true, botName: 'automation-detected' };
+    }
+
     return { isBot: false, botName: null };
   }
 
@@ -93,7 +143,8 @@
   }
 
   // ============================================================
-  // FINGERPRINT — unique browser signature
+  // ENHANCED FINGERPRINT — Canvas + WebGL + Audio + standard
+  // Much more unique than simple UA+screen hash
   // ============================================================
   function getFingerprint() {
     try {
@@ -105,8 +156,44 @@
         (navigator.hardwareConcurrency || 0).toString(),
         (navigator.deviceMemory || 0).toString(),
         screen.colorDepth.toString(),
-        new Date().getTimezoneOffset().toString()
+        new Date().getTimezoneOffset().toString(),
+        (navigator.plugins ? navigator.plugins.length : 0).toString(),
+        navigator.platform || '',
+        (navigator.maxTouchPoints || 0).toString()
       ];
+
+      // Canvas fingerprint — draws text and reads pixel data
+      try {
+        var canvas = document.createElement('canvas');
+        canvas.width = 200;
+        canvas.height = 50;
+        var ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.textBaseline = 'top';
+          ctx.font = '14px Arial';
+          ctx.fillStyle = '#f60';
+          ctx.fillRect(50, 0, 100, 50);
+          ctx.fillStyle = '#069';
+          ctx.fillText('ADMINfp', 2, 15);
+          ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+          ctx.fillText('ADMINfp', 4, 17);
+          parts.push(canvas.toDataURL().slice(-50));
+        }
+      } catch(e) {}
+
+      // WebGL fingerprint — renderer info
+      try {
+        var glCanvas = document.createElement('canvas');
+        var gl = glCanvas.getContext('webgl') || glCanvas.getContext('experimental-webgl');
+        if (gl) {
+          var debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+          if (debugInfo) {
+            parts.push(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '');
+            parts.push(gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || '');
+          }
+        }
+      } catch(e) {}
+
       var str = parts.join('|');
       var hash = 0;
       for (var i = 0; i < str.length; i++) {
@@ -136,6 +223,7 @@
 
   // ============================================================
   // DEVICE DETECTION — laptop vs desktop vs mobile vs tablet
+  // Enhanced with more accurate laptop detection
   // ============================================================
   function getDeviceType() {
     var ua = navigator.userAgent;
@@ -144,19 +232,41 @@
 
     var w = screen.width;
     var h = screen.height;
+    var dpr = window.devicePixelRatio || 1;
 
     // macOS = most likely laptop
     if (/Mac OS X/.test(ua)) {
-      if (w === 5120 && h === 2880) return 'desktop';
-      if (w === 6016 && h === 3384) return 'desktop';
+      // Known desktop Mac resolutions
+      if (w === 5120 && h === 2880) return 'desktop'; // iMac 5K
+      if (w === 6016 && h === 3384) return 'desktop'; // Pro Display XDR
+      // MacBook common physical resolutions (before DPR scaling)
+      if (w === 2560 && h === 1600) return 'laptop';  // MacBook Air M2/M3
+      if (w === 3024 && h === 1964) return 'laptop';  // MacBook Pro 14"
+      if (w === 3456 && h === 2234) return 'laptop';  // MacBook Pro 16"
+      if (w === 1440 && h === 900) return 'laptop';   // MacBook Air 13"
+      if (w === 1680 && h === 1050) return 'laptop';  // MacBook Pro 15"
+      // macOS with DPR > 1 and screen width <= 1800 = laptop
+      if (dpr > 1 && w <= 1800) return 'laptop';
+      // Default macOS = laptop (most Macs are laptops)
       return 'laptop';
     }
 
-    // Windows/Linux
+    // Windows/Linux — check if touch is primary input
+    var isTouchPrimary = false;
+    try {
+      isTouchPrimary = navigator.maxTouchPoints > 0 && window.matchMedia('(pointer: coarse)').matches;
+    } catch(e) {}
+
+    // If touch is primary on a device with large screen = tablet
+    if (isTouchPrimary && w >= 600 && h >= 600) return 'tablet';
+
+    // Laptop heuristics based on screen resolution
     if (h <= 900) return 'laptop';
     if (h === 1080) {
       var laptopWidths = [1280, 1360, 1366, 1440, 1536, 1600, 1680];
       if (laptopWidths.indexOf(w) !== -1) return 'laptop';
+      // 1920x1080 with DPR > 1 is likely a laptop with scaling
+      if (dpr > 1 && w === 1920) return 'laptop';
     }
 
     return 'desktop';
@@ -165,6 +275,54 @@
   function getScreenRes() {
     return screen.width + 'x' + screen.height;
   }
+
+  // ============================================================
+  // BEHAVIORAL SIGNALS — collect human-like interaction data
+  // Helps server distinguish human from bot more accurately
+  // ============================================================
+  var behaviorData = {
+    mouseMoves: 0,
+    keyPresses: 0,
+    touchEvents: 0,
+    scrollEvents: 0,
+    clickEvents: 0,
+    interactionScore: 0 // 0-5 scale
+  };
+
+  function updateBehaviorScore() {
+    var score = 0;
+    if (behaviorData.mouseMoves > 5) score++;
+    if (behaviorData.keyPresses > 0) score++;
+    if (behaviorData.touchEvents > 0) score++;
+    if (behaviorData.scrollEvents > 2) score++;
+    if (behaviorData.clickEvents > 1) score++;
+    behaviorData.interactionScore = score;
+  }
+
+  // Track mouse movements (lightweight)
+  var mouseMoveThrottle = 0;
+  document.addEventListener('mousemove', function() {
+    var now = Date.now();
+    if (now - mouseMoveThrottle < 2000) return; // Throttle: count every 2s
+    mouseMoveThrottle = now;
+    behaviorData.mouseMoves++;
+    updateBehaviorScore();
+  }, { passive: true });
+
+  document.addEventListener('keydown', function() {
+    behaviorData.keyPresses++;
+    updateBehaviorScore();
+  }, { passive: true });
+
+  document.addEventListener('touchstart', function() {
+    behaviorData.touchEvents++;
+    updateBehaviorScore();
+  }, { passive: true });
+
+  document.addEventListener('scroll', function() {
+    behaviorData.scrollEvents++;
+    updateBehaviorScore();
+  }, { passive: true });
 
   // ============================================================
   // UTM PARSING
@@ -199,7 +357,12 @@
           if (xhr.status === 200) {
             try {
               var data = JSON.parse(xhr.responseText);
-              geoCache = { country: data.country_name, city: data.city };
+              geoCache = {
+                country: data.country_name,
+                countryCode: data.country_code,
+                city: data.city,
+                region: data.region,
+              };
             } catch(e) { geoCache = {}; }
           } else { geoCache = {}; }
           resolve(geoCache);
@@ -236,11 +399,28 @@
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
       isBot: botInfo.isBot,
       botName: botInfo.botName,
+      // Behavioral signals for human verification
+      behavior: {
+        mouse: behaviorData.mouseMoves,
+        keys: behaviorData.keyPresses,
+        touch: behaviorData.touchEvents,
+        scroll: behaviorData.scrollEvents,
+        clicks: behaviorData.clickEvents,
+        score: behaviorData.interactionScore
+      },
+      // Platform details for better identification
+      platform: navigator.platform || '',
+      cookieEnabled: navigator.cookieEnabled,
+      doNotTrack: navigator.doNotTrack,
+      colorDepth: screen.colorDepth,
+      pixelRatio: window.devicePixelRatio || 1,
     }, utm, eventData || {});
 
     if (geoCache) {
       payload.country = geoCache.country;
+      payload.countryCode = geoCache.countryCode;
       payload.city = geoCache.city;
+      payload.region = geoCache.region;
     }
 
     var data = JSON.stringify(payload);
@@ -281,6 +461,9 @@
 
   // Click tracking
   document.addEventListener('click', function(e) {
+    behaviorData.clickEvents++;
+    updateBehaviorScore();
+
     var target = e.target.closest ? e.target.closest('a') || e.target : e.target;
 
     if (target.tagName === 'A' && target.href) {
@@ -343,6 +526,10 @@
     trackContactOpen: function() { track('contact_open'); },
     trackContactFormOpen: function() { track('contact_form_open'); },
     trackFormSubmit: function() { track('form_submit'); },
+    // Get current user ID (for debugging)
+    getUserId: getUserId,
+    // Get current fingerprint (for debugging)
+    getFingerprint: getFingerprint,
   };
   window.FolioAnalytics = window.AdminAnalytics;
 

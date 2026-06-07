@@ -122,6 +122,7 @@ export const periodDescriptions: Record<string, string> = {
 export const sectionLabels: Record<string, string> = {
   overview: 'Обзор',
   realtime: 'Реальное время',
+  visitors: 'Посетители',
   projects: 'Проекты',
   geography: 'География',
   devices: 'Устройства',
@@ -136,6 +137,7 @@ export const sectionLabels: Record<string, string> = {
 export const sectionDescriptions: Record<string, string> = {
   overview: 'Сводная информация: посетители, просмотры, динамика за выбранный период',
   realtime: 'Активные посетители прямо сейчас, текущие страницы и события в реальном времени',
+  visitors: 'Список уникальных посетителей: кто заходил, человек или бот, откуда, когда, сколько раз',
   projects: 'Управление подключёнными сайтами: статистика, рейтинги, код подключения',
   geography: 'Географическое распределение посетителей: страны, города, регионы',
   devices: 'Устройства, браузеры, ОС и разрешения экранов ваших посетителей',
