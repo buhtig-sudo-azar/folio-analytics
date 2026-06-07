@@ -195,9 +195,17 @@ export function ProjectsSection() {
                         value={newProject.name}
                         onChange={(e) => {
                           const name = e.target.value;
+                          // Transliterate Russian to Latin for auto-ID
+                          const ruMap: Record<string, string> = {
+                            'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh',
+                            'з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o',
+                            'п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'ts',
+                            'ч':'ch','ш':'sh','щ':'sch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya',
+                          };
                           const autoId = name
                             .toLowerCase()
-                            .replace(/[^\wа-яё]/gi, '-')
+                            .split('').map(c => ruMap[c] || c).join('')
+                            .replace(/[^a-z0-9-]/g, '-')
                             .replace(/-+/g, '-')
                             .replace(/^-|-$/g, '');
                           setNewProject(p => ({ ...p, name, projectId: p.projectId || autoId }));
@@ -215,7 +223,7 @@ export function ProjectsSection() {
                       <p className="text-xs text-muted-foreground mt-1">Латиница и дефисы — это внутренний идентификатор, нужен только для системы. Автоматически генерируется из названия</p>
                     </div>
                     <div>
-                      <Label>URL проекта *</Label>
+                      <Label>URL проекта</Label>
                       <Input
                         placeholder="https://example.com, https://myshop.ru, https://tilda.cc/mysite..."
                         value={newProject.url}

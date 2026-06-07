@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
       case 'conversions':
         return NextResponse.json(await getConversions(dateFilter, projectId));
       case 'funnel':
-        return NextResponse.json(await getFunnel(dateFilter));
+        return NextResponse.json(await getFunnel(dateFilter, projectId));
       case 'pages':
         return NextResponse.json(await getPageAnalytics(dateFilter, projectId));
       case 'realtime':
@@ -103,14 +103,20 @@ async function getOverview(since: Date, projectId?: string | null) {
     db.event.count({ where: { ...where, eventType: 'demo_open' } }),
     db.event.count({ where: { ...where, eventType: 'contact_open' } }),
     db.event.count({ where: { ...where, eventType: 'external_link_click' } }),
-    db.event.count({
+    db.event.findMany({
       where: { ...where, timestamp: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
+      select: { userId: true },
+      distinct: ['userId'],
     }),
-    db.event.count({
+    db.event.findMany({
       where: { ...where, timestamp: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
+      select: { userId: true },
+      distinct: ['userId'],
     }),
-    db.event.count({
+    db.event.findMany({
       where: { ...where, timestamp: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
+      select: { userId: true },
+      distinct: ['userId'],
     }),
   ]);
 
@@ -137,9 +143,9 @@ async function getOverview(since: Date, projectId?: string | null) {
     demoOpens,
     contactOpens,
     linkClicks,
-    todayVisitors: todayEvents,
-    weekVisitors: weekEvents,
-    monthVisitors: monthEvents,
+    todayVisitors: todayEvents.length,
+    weekVisitors: weekEvents.length,
+    monthVisitors: monthEvents.length,
     conversionRate: pageViews > 0 ? ((projectViews + demoOpens) / pageViews * 100).toFixed(1) : 0,
   };
 }
@@ -216,6 +222,7 @@ async function getGeography(since: Date, projectId?: string | null) {
 
 async function getDevices(since: Date, projectId?: string | null) {
   const where: Record<string, unknown> = { startedAt: { gte: since } };
+  if (projectId) where.projectId = projectId;
 
   const sessions = await db.analyticsSession.findMany({
     where,
@@ -243,6 +250,7 @@ async function getDevices(since: Date, projectId?: string | null) {
 
 async function getBrowsers(since: Date, projectId?: string | null) {
   const where: Record<string, unknown> = { startedAt: { gte: since } };
+  if (projectId) where.projectId = projectId;
 
   const sessions = await db.analyticsSession.findMany({
     where,
@@ -262,6 +270,7 @@ async function getBrowsers(since: Date, projectId?: string | null) {
 
 async function getOS(since: Date, projectId?: string | null) {
   const where: Record<string, unknown> = { startedAt: { gte: since } };
+  if (projectId) where.projectId = projectId;
 
   const sessions = await db.analyticsSession.findMany({
     where,
@@ -281,6 +290,7 @@ async function getOS(since: Date, projectId?: string | null) {
 
 async function getTrafficSources(since: Date, projectId?: string | null) {
   const where: Record<string, unknown> = { startedAt: { gte: since } };
+  if (projectId) where.projectId = projectId;
 
   const sessions = await db.analyticsSession.findMany({
     where,
@@ -456,13 +466,16 @@ async function getConversions(since: Date, projectId?: string | null) {
   };
 }
 
-async function getFunnel(since: Date) {
+async function getFunnel(since: Date, projectId?: string | null) {
+  const where: Record<string, unknown> = { timestamp: { gte: since } };
+  if (projectId) where.projectId = projectId;
+
   const [portfolioViews, projectViews, projectOpens, demoOpens, contacts] = await Promise.all([
-    db.event.count({ where: { eventType: 'page_view', timestamp: { gte: since } } }),
-    db.event.count({ where: { eventType: 'project_view', timestamp: { gte: since } } }),
-    db.event.count({ where: { eventType: 'demo_open', timestamp: { gte: since } } }),
-    db.event.count({ where: { eventType: 'external_link_click', timestamp: { gte: since } } }),
-    db.event.count({ where: { eventType: 'contact_open', timestamp: { gte: since } } }),
+    db.event.count({ where: { ...where, eventType: 'page_view' } }),
+    db.event.count({ where: { ...where, eventType: 'project_view' } }),
+    db.event.count({ where: { ...where, eventType: 'demo_open' } }),
+    db.event.count({ where: { ...where, eventType: 'external_link_click' } }),
+    db.event.count({ where: { ...where, eventType: 'contact_open' } }),
   ]);
 
   const steps = [
