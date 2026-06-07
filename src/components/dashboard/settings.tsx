@@ -91,77 +91,196 @@ curl -X POST "${serverOrigin}/api/track" \\
 
   return (
     <div className="space-y-6">
-      {/* Connection guide */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Card className="cursor-help">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <LinkIcon className="h-4 w-4 text-emerald-500" />
-                Подключение проекта
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-blue-500" />
-                  Вариант 1: Тот же домен
-                </h4>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Если аналитика и проект на одном сервере — используйте относительный путь:
-                </p>
-                <div className="relative">
-                  <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto font-mono">{trackerSameDomain}</pre>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => handleCopy('same', trackerSameDomain)}>
-                        {copied === 'same' ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      <p className="text-xs">{copied === 'same' ? 'Скопировано!' : 'Скопировать код'}</p>
-                    </TooltipContent>
-                  </Tooltip>
+      {/* Step-by-step guide: WHERE to insert the tracker */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <LinkIcon className="h-4 w-4 text-emerald-500" />
+            Куда вставлять трекер-код? Пошаговая инструкция
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {/* Step 1 */}
+          <div className="flex gap-3">
+            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-emerald-500 text-white text-sm font-bold shrink-0">1</div>
+            <div>
+              <h4 className="text-sm font-medium">Скопируйте трекер-код</h4>
+              <p className="text-sm text-muted-foreground mt-1">
+                Перейдите в раздел <strong className="text-foreground">«Проекты»</strong>, найдите ваш проект и нажмите кнопку &lt;/&gt; (скопировать трекер-код).
+                Либо возьмите код ниже — подставьте свои значения <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">projectId</code> и <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">projectName</code>.
+              </p>
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div className="flex gap-3">
+            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-emerald-500 text-white text-sm font-bold shrink-0">2</div>
+            <div>
+              <h4 className="text-sm font-medium">Откройте HTML-файл вашего сайта</h4>
+              <p className="text-sm text-muted-foreground mt-1">
+                Найдите главный файл вашего сайта. Вот типичные пути:
+              </p>
+              <div className="mt-2 space-y-1.5 text-sm">
+                <div className="flex items-start gap-2">
+                  <Badge variant="outline" className="text-xs font-mono shrink-0 mt-0.5">GitHub Pages</Badge>
+                  <span className="text-muted-foreground"><code className="bg-muted px-1 py-0.5 rounded text-xs font-mono">index.html</code> в корне репозитория</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Badge variant="outline" className="text-xs font-mono shrink-0 mt-0.5">React / Next.js</Badge>
+                  <span className="text-muted-foreground"><code className="bg-muted px-1 py-0.5 rounded text-xs font-mono">src/app/layout.tsx</code> или <code className="bg-muted px-1 py-0.5 rounded text-xs font-mono">pages/_document.tsx</code></span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Badge variant="outline" className="text-xs font-mono shrink-0 mt-0.5">Vue / Nuxt</Badge>
+                  <span className="text-muted-foreground"><code className="bg-muted px-1 py-0.5 rounded text-xs font-mono">app.vue</code> или <code className="bg-muted px-1 py-0.5 rounded text-xs font-mono">nuxt.config.ts</code> (head)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Badge variant="outline" className="text-xs font-mono shrink-0 mt-0.5">WordPress</Badge>
+                  <span className="text-muted-foreground"><code className="bg-muted px-1 py-0.5 rounded text-xs font-mono">header.php</code> вашей темы или плагин «Insert Headers & Footers»</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Badge variant="outline" className="text-xs font-mono shrink-0 mt-0.5">Tilda / Конструктор</Badge>
+                  <span className="text-muted-foreground">Настройки сайта → «Код в HEAD» или «Пользовательский HTML»</span>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <div>
-                <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-amber-500" />
-                  Вариант 2: Кросс-домен (GitHub Pages, Vercel, Netlify)
-                </h4>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Если проект на другом домене — укажите полный URL до сервера аналитики:
-                </p>
-                <div className="relative">
-                  <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto font-mono">{trackerCrossDomain}</pre>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => handleCopy('cross', trackerCrossDomain)}>
-                        {copied === 'cross' ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      <p className="text-xs">{copied === 'cross' ? 'Скопировано!' : 'Скопировать код'}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              </div>
+          {/* Step 3 */}
+          <div className="flex gap-3">
+            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-emerald-500 text-white text-sm font-bold shrink-0">3</div>
+            <div>
+              <h4 className="text-sm font-medium">Вставьте код перед закрывающим тегом &lt;/head&gt;</h4>
+              <p className="text-sm text-muted-foreground mt-1">
+                Найдите в HTML-файле строку <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">&lt;/head&gt;</code> и вставьте трекер-код
+                <strong className="text-foreground"> прямо перед ней</strong>. Вот как это должно выглядеть:
+              </p>
+              <pre className="bg-muted p-4 rounded-lg text-xs overflow-x-auto font-mono mt-2">{`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Мой сайт</title>
 
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-emerald-600 mb-1">Автомасштабирование</h4>
-                <p className="text-sm text-muted-foreground">
-                  Проект автоматически появится в дашборде при первом посещении. Цели и конверсии создаются автоматически.
-                  Не нужно настраивать таблицы или события вручную — просто вставьте код.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" className="max-w-[280px]">
-          <p className="text-xs text-primary-foreground/80">Инструкция по подключению трекера на ваш сайт. Вариант 1 — если сайт на том же домене. Вариант 2 — если сайт на другом домене (GitHub Pages и т.п.)</p>
-        </TooltipContent>
-      </Tooltip>
+  <!-- 👇 ADMIN Panel трекер — вставить СЮДА -->
+  <script>
+    window.AdminPanelTracker = {
+      endpoint: '${serverOrigin}/api/track',
+      projectId: 'ваш-project-id',
+      projectName: 'Название проекта'
+    };
+  </script>
+  <script src="${serverOrigin}/tracker/tracker.js" async></script>
+  <!-- 👆 Конец трекера -->
+
+</head>
+<body>
+  ...содержимое сайта...
+</body>
+</html>`}</pre>
+            </div>
+          </div>
+
+          {/* Step 4 */}
+          <div className="flex gap-3">
+            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-emerald-500 text-white text-sm font-bold shrink-0">4</div>
+            <div>
+              <h4 className="text-sm font-medium">Сохраните и опубликуйте</h4>
+              <p className="text-sm text-muted-foreground mt-1">
+                Сохраните файл, закоммитьте изменения (если Git) и запушьте. Для GitHub Pages — подождите 1-2 минуты,
+                пока GitHub пересоберёт сайт. После этого откройте ваш сайт в браузере — данные начнут поступать в ADMIN Panel автоматически.
+              </p>
+            </div>
+          </div>
+
+          {/* Step 5 */}
+          <div className="flex gap-3">
+            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-emerald-500 text-white text-sm font-bold shrink-0">5</div>
+            <div>
+              <h4 className="text-sm font-medium">Проверьте, что всё работает</h4>
+              <p className="text-sm text-muted-foreground mt-1">
+                Откройте ваш сайт, полистайте страницы. Затем вернитесь в ADMIN Panel — в разделе
+                <strong className="text-foreground"> «Реальное время»</strong> должны появиться события.
+                Также можно проверить через консоль браузера (F12 → Network → ищите запросы к <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">/api/track</code>).
+              </p>
+            </div>
+          </div>
+
+          {/* Important notes */}
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 space-y-2">
+            <h4 className="text-sm font-medium text-amber-600">Важные моменты</h4>
+            <ul className="text-sm text-muted-foreground space-y-1.5">
+              <li>• Трекер-код вставляется <strong className="text-foreground">один раз</strong> — на каждую страницу, которую хотите отслеживать</li>
+              <li>• Если у вас SPA (React/Vue/Angular) — трекер автоматически ловит переходы между страницами</li>
+              <li>• Если сайт на другом домене (GitHub Pages, Netlify и т.п.) — обязательно используйте <strong className="text-foreground">Вариант 2</strong> с полным URL</li>
+              <li>• Данные появятся не мгновенно — подождите 5-10 секунд после посещения</li>
+            </ul>
+          </div>
+
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-emerald-600 mb-1">Автомасштабирование</h4>
+            <p className="text-sm text-muted-foreground">
+              Проект автоматически появится в дашборде при первом посещении. Цели и конверсии создаются автоматически.
+              Не нужно настраивать таблицы или события вручную — просто вставьте код.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tracker code variants */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Code className="h-4 w-4 text-blue-500" />
+            Код трекера — выберите ваш вариант
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+              <Globe className="h-4 w-4 text-blue-500" />
+              Вариант 1: Тот же домен
+            </h4>
+            <p className="text-sm text-muted-foreground mb-2">
+              Если аналитика и проект на одном сервере — используйте относительный путь:
+            </p>
+            <div className="relative">
+              <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto font-mono">{trackerSameDomain}</pre>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => handleCopy('same', trackerSameDomain)}>
+                    {copied === 'same' ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p className="text-xs">{copied === 'same' ? 'Скопировано!' : 'Скопировать код'}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+              <Zap className="h-4 w-4 text-amber-500" />
+              Вариант 2: Кросс-домен (GitHub Pages, Vercel, Netlify)
+            </h4>
+            <p className="text-sm text-muted-foreground mb-2">
+              Если проект на другом домене — укажите полный URL до сервера аналитики:
+            </p>
+            <div className="relative">
+              <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto font-mono">{trackerCrossDomain}</pre>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => handleCopy('cross', trackerCrossDomain)}>
+                    {copied === 'cross' ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p className="text-xs">{copied === 'cross' ? 'Скопировано!' : 'Скопировать код'}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* API Reference */}
       <Tooltip>

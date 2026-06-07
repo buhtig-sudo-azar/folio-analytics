@@ -470,15 +470,29 @@ export function ProjectsSection() {
                   </div>
                 )}
 
-                {/* Tracker code (collapsible) */}
+                {/* Tracker code (collapsible) with instructions */}
                 <details className="mt-3">
                   <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground flex items-center gap-1">
                     <LinkIcon className="h-3 w-3" />
-                    Код подключения
+                    Код подключения и инструкция
                   </summary>
-                  <pre className="mt-2 bg-muted p-3 rounded-lg text-xs overflow-x-auto font-mono">
-                    {getTrackerCode(project)}
-                  </pre>
+                  <div className="mt-2 space-y-2">
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-xs text-muted-foreground">
+                      <strong className="text-foreground">Куда вставлять:</strong> откройте HTML вашего сайта, найдите тег <code className="bg-muted px-1 py-0.5 rounded font-mono">&lt;/head&gt;</code> и вставьте этот код <strong className="text-foreground">прямо перед ним</strong>. Подробная инструкция — в разделе «Настройки».
+                    </div>
+                    <pre className="bg-muted p-3 rounded-lg text-xs overflow-x-auto font-mono">
+                      {getTrackerCode(project)}
+                    </pre>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-2 text-xs"
+                      onClick={() => copyTrackerCode(project)}
+                    >
+                      {copiedId === project.id ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                      {copiedId === project.id ? 'Скопировано!' : 'Скопировать код'}
+                    </Button>
+                  </div>
                 </details>
               </CardContent>
             </Card>
