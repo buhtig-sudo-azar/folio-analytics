@@ -6,17 +6,19 @@ import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { ModelSelector } from './ModelSelector';
 import { ApiTokenInput } from './ApiTokenInput';
-import { X, Minimize2, Maximize2, BarChart3 } from 'lucide-react';
+import { ModelTestPanel } from './ModelTestPanel';
+import { X, Minimize2, Maximize2, BarChart3, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRef, useEffect, useCallback, useState } from 'react';
-import { SYSTEM_PROMPT } from '@/lib/analytics/chat-prompt';
+import { streamChat } from '@/lib/analytics/stream-chat';
 import { ANALYTICS_AGENT, SUGGESTIONS } from '@/lib/analytics/agent-data';
 
 export function AgentChatPopup() {
   const { messages, isLoading, isOpen, isExpanded, setOpen, setExpanded, clearMessages } = useChatStore();
-  const { currentModel, apiToken, _hydrated, _hydrate, markModelRateLimited } = useModelStore();
+  const { _hydrated, _hydrate } = useModelStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [showTestPanel, setShowTestPanel] = useState(false);
   const agent = ANALYTICS_AGENT;
 
   // Hydrate model store from localStorage on first render
@@ -26,15 +28,16 @@ export function AgentChatPopup() {
 
   // Автопрокрутка при новых сообщениях
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && !showTestPanel) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, showTestPanel]);
 
   const handleClose = useCallback(() => {
     setOpen(false);
     setIsMinimized(false);
     setExpanded(false);
+    setShowTestPanel(false);
     clearMessages();
   }, [setOpen, setExpanded, clearMessages]);
 
@@ -55,66 +58,9 @@ export function AgentChatPopup() {
     setIsMinimized(false);
   }, [setOpen]);
 
-  // Stream helper shared by hint buttons
-  const streamChat = useCallback(async (userMessage: string) => {
-    const chatStore = useChatStore.getState();
-    const modelStore = useModelStore.getState();
-    chatStore.addMessage({ role: 'user', content: userMessage });
-    chatStore.setLoading(true);
-
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: userMessage }],
-          systemPrompt: SYSTEM_PROMPT,
-          model: modelStore.currentModel,
-          apiToken: modelStore.apiToken || undefined,
-        }),
-      });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        chatStore.addMessage({ role: 'assistant', content: `⚠️ ${errData.error || 'Ошибка. Попробуйте ещё раз.'}` });
-        chatStore.setLoading(false);
-        return;
-      }
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      if (!reader) return;
-
-      chatStore.addMessage({ role: 'assistant', content: '' });
-      let full = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        for (const line of chunk.split('\n')) {
-          if (!line.startsWith('data: ')) continue;
-          const data = line.slice(6).trim();
-          if (data === '[DONE]') continue;
-          try {
-            const parsed = JSON.parse(data);
-            // model_info event
-            if (parsed.type === 'model_info' && parsed.exhausted?.length) {
-              for (const m of parsed.exhausted) {
-                modelStore.markModelRateLimited(m, 'rate_limited');
-              }
-            }
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) { full += content; chatStore.appendToLastMessage(content); }
-          } catch {}
-        }
-      }
-      if (!full) chatStore.appendToLastMessage('Не удалось получить ответ.');
-    } catch {
-      chatStore.addMessage({ role: 'assistant', content: '⚠️ Ошибка сети.' });
-    } finally {
-      chatStore.setLoading(false);
-    }
+  // Suggestion handler — uses shared streamChat (no history for suggestions)
+  const handleSuggestion = useCallback(async (hint: string) => {
+    await streamChat(hint, false);
   }, []);
 
   // === Кнопка FAB (чат закрыт) ===
@@ -186,6 +132,17 @@ export function AgentChatPopup() {
             </div>
           </div>
           <div className="flex items-center gap-0.5 flex-shrink-0">
+            {/* Test panel toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`h-7 w-7 hover:bg-muted ${showTestPanel ? 'bg-emerald-500/10 text-emerald-500' : ''}`}
+              onClick={() => setShowTestPanel(!showTestPanel)}
+              aria-label="Тест моделей"
+              title="Проверить доступность моделей"
+            >
+              <Shield className="h-3.5 w-3.5" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -217,67 +174,78 @@ export function AgentChatPopup() {
         </div>
       </div>
 
-      {/* Область сообщений */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto p-4 min-h-0"
-      >
-        {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-            <div className={`w-20 h-20 rounded-full ${agent.iconBg} flex items-center justify-center text-white shadow-lg mb-4`}>
-              <BarChart3 className="h-9 w-9" />
-            </div>
-            <p className="text-base font-bold text-foreground mb-1">{agent.name}</p>
-            <p className="text-xs text-muted-foreground mb-4">{agent.role}</p>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-[300px]">
-              {agent.greeting}
-            </p>
-            {/* Подсказки */}
-            <div className="mt-5 flex flex-wrap gap-2 justify-center">
-              {SUGGESTIONS.map((hint) => (
-                <button
-                  key={hint}
-                  onClick={() => streamChat(hint)}
-                  className="text-xs px-3 py-1.5 rounded-full bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors border border-border/50"
-                >
-                  {hint}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {messages.map((msg, i) => (
-              <ChatMessage
-                key={msg.id}
-                message={msg}
-                isStreaming={isLoading && i === messages.length - 1 && msg.role === 'assistant'}
-              />
-            ))}
-            {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
-              <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
-                <div className={`w-8 h-8 rounded-full ${agent.iconBg} flex items-center justify-center text-white shadow-sm flex-shrink-0`}>
-                  <BarChart3 className="h-4 w-4" />
+      {/* Main content area - chat or test panel */}
+      {showTestPanel ? (
+        <div className={isExpanded ? 'h-[calc(100vh-10rem)]' : 'h-[400px]'}>
+          <ModelTestPanel onClose={() => setShowTestPanel(false)} />
+        </div>
+      ) : (
+        <>
+          {/* Область сообщений */}
+          <div
+            ref={scrollRef}
+            className="flex-1 overflow-y-auto p-4 min-h-0"
+          >
+            {messages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+                <div className={`w-20 h-20 rounded-full ${agent.iconBg} flex items-center justify-center text-white shadow-lg mb-4`}>
+                  <BarChart3 className="h-9 w-9" />
                 </div>
-                <div className="flex items-center gap-1">
-                  <span className="animate-pulse">Думаю</span>
-                  <span className="animate-pulse">.</span>
-                  <span className="animate-pulse" style={{ animationDelay: '0.2s' }}>.</span>
-                  <span className="animate-pulse" style={{ animationDelay: '0.4s' }}>.</span>
+                <p className="text-base font-bold text-foreground mb-1">{agent.name}</p>
+                <p className="text-xs text-muted-foreground mb-4">{agent.role}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-[300px]">
+                  {agent.greeting}
+                </p>
+                {/* Подсказки */}
+                <div className="mt-5 flex flex-wrap gap-2 justify-center">
+                  {SUGGESTIONS.map((hint) => (
+                    <button
+                      key={hint}
+                      onClick={() => handleSuggestion(hint)}
+                      className="text-xs px-3 py-1.5 rounded-full bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors border border-border/50"
+                    >
+                      {hint}
+                    </button>
+                  ))}
                 </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {messages.map((msg, i) => (
+                  <ChatMessage
+                    key={msg.id}
+                    message={msg}
+                    isStreaming={isLoading && i === messages.length - 1 && msg.role === 'assistant'}
+                  />
+                ))}
+                {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
+                  <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                    <div className={`w-8 h-8 rounded-full ${agent.iconBg} flex items-center justify-center text-white shadow-sm flex-shrink-0`}>
+                      <BarChart3 className="h-4 w-4" />
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="animate-pulse">Думаю</span>
+                      <span className="animate-pulse">.</span>
+                      <span className="animate-pulse" style={{ animationDelay: '0.2s' }}>.</span>
+                      <span className="animate-pulse" style={{ animationDelay: '0.4s' }}>.</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
-      </div>
+        </>
+      )}
 
-      {/* API-токен + Поле ввода */}
-      <div className="border-t border-border">
-        <div className="px-3 py-1.5 flex items-center">
-          <ApiTokenInput />
+      {/* API-токен + Поле ввода (hidden when test panel shown) */}
+      {!showTestPanel && (
+        <div className="border-t border-border">
+          <div className="px-3 py-1.5 flex items-center">
+            <ApiTokenInput />
+          </div>
+          <ChatInput />
         </div>
-        <ChatInput />
-      </div>
+      )}
     </div>
   );
 }
