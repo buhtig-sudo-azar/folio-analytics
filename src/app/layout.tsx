@@ -19,6 +19,16 @@ export const metadata: Metadata = {
   description: "Централизованная панель аналитики для ваших сайтов. Автоматический сбор статистики, конверсии, рейтинги проектов.",
   keywords: ["analytics", "dashboard", "admin", "Next.js", "TypeScript"],
   authors: [{ name: "ADMIN Panel" }],
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180" },
+      { url: "/apple-touch-icon.png" },
+    ],
+  },
 };
 
 export default function RootLayout({
