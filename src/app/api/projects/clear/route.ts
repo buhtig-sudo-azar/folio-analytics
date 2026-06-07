@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     // Find the project by projectId (the slug, not the DB id)
     const project = await db.project.findUnique({ where: { projectId } });
-    if (!project) {
+    if (!project || project.deletedAt) {
       return NextResponse.json(
         { error: 'Проект не найден' },
         { status: 404 }

@@ -68,13 +68,14 @@ model User {
 
 // Auto-discovered projects from tracked events
 model Project {
-  id          String   @id @default(cuid())
-  projectId   String   @unique // Identifier from tracking script (e.g., "portfolio-main", "project-chat")
+  id          String    @id @default(cuid())
+  projectId   String    @unique // Identifier from tracking script (e.g., "portfolio-main", "project-chat")
   name        String
   url         String?
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime? // Soft delete: when set, project is considered deleted
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   events       Event[]
   pageViews    PageView[]

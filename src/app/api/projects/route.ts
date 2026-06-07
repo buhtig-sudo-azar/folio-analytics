@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-// GET /api/projects - List all registered projects
+// GET /api/projects - List all registered projects (excluding soft-deleted)
 export async function GET() {
   try {
     const projects = await db.project.findMany({
+      where: { deletedAt: null },
       orderBy: { createdAt: 'desc' },
       include: {
         _count: { select: { events: true, conversions: true, goals: true } },
@@ -53,6 +54,40 @@ export async function POST(req: NextRequest) {
 
     const existing = await db.project.findUnique({ where: { projectId } });
     if (existing) {
+      // If project was soft-deleted, restore it instead of erroring
+      if (existing.deletedAt) {
+        const restored = await db.project.update({
+          where: { id: existing.id },
+          data: { deletedAt: null, name, url: url || existing.url, description: description || existing.description },
+        });
+
+        // Re-create default goals for the restored project
+        const defaultGoals = [
+          { eventType: 'project_view', name: 'Просмотр проекта' },
+          { eventType: 'demo_open', name: 'Открытие демо' },
+          { eventType: 'external_link_click', name: 'Переход по ссылке' },
+          { eventType: 'contact_open', name: 'Открытие контактов' },
+          { eventType: 'contact_form_open', name: 'Открытие формы связи' },
+          { eventType: 'form_submit', name: 'Отправка формы' },
+        ];
+        for (const goal of defaultGoals) {
+          await db.goal.create({
+            data: {
+              projectId: restored.id,
+              eventType: goal.eventType,
+              name: goal.name,
+              description: `Авто-цель: ${goal.name}`,
+            },
+          });
+        }
+
+        const goals = await db.goal.findMany({ where: { projectId: restored.id } });
+        return NextResponse.json({
+          ...restored,
+          goals,
+          trackerScript: generateTrackerScript(projectId, name, url),
+        });
+      }
       return NextResponse.json(
         { error: 'Project with this ID already exists', project: existing },
         { status: 409 }
@@ -124,7 +159,7 @@ export async function PATCH(req: NextRequest) {
   }
 }
 
-// DELETE /api/projects - Remove a project
+// DELETE /api/projects - Soft-delete a project (sets deletedAt, prevents auto-recreation)
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -134,11 +169,20 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Project id required' }, { status: 400 });
     }
 
-    // Delete in correct order
+    // Clean up all related data
     await db.conversion.deleteMany({ where: { projectId: id } });
     await db.goal.deleteMany({ where: { projectId: id } });
     await db.event.updateMany({ where: { projectId: id }, data: { projectId: null } });
-    await db.project.delete({ where: { id } });
+    await db.pageView.deleteMany({ where: { projectId: id } });
+    await db.dailyStats.deleteMany({ where: { projectId: id } });
+    await db.heatmapPoint.deleteMany({ where: { projectId: id } });
+
+    // Soft-delete the project itself (set deletedAt instead of hard delete)
+    // This prevents the tracker from auto-recreating the project
+    await db.project.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

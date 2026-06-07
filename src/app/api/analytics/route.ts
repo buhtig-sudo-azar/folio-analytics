@@ -348,6 +348,7 @@ async function getUTMAnalytics(since: Date, projectId?: string | null) {
 
 async function getProjectAnalytics(since: Date) {
   const projects = await db.project.findMany({
+    where: { deletedAt: null },
     include: {
       events: {
         where: { timestamp: { gte: since } },
@@ -398,7 +399,7 @@ async function getProjectDetail(projectId: string | null | undefined, since: Dat
     },
   });
 
-  if (!project) return { error: 'Project not found' };
+  if (!project || project.deletedAt) return { error: 'Project not found' };
 
   const views = project.events.filter(e => e.eventType === 'page_view').length;
   const uniqueVisitors = new Set(project.events.map(e => e.userId)).size;

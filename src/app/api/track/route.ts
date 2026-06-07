@@ -58,13 +58,18 @@ export async function POST(req: NextRequest) {
     const deviceType = clientDeviceType || uaInfo.deviceType;
 
     // AUTO-DISCOVER: If projectId sent but not in DB → create project + goals automatically
+    // But if project was soft-deleted, skip auto-recreation
     let projectDbId: string | null = null;
     if (rawProjectId) {
       const existingProject = await db.project.findUnique({
         where: { projectId: rawProjectId },
       });
       if (existingProject) {
-        projectDbId = existingProject.id;
+        // Project exists — use it only if not soft-deleted
+        if (!existingProject.deletedAt) {
+          projectDbId = existingProject.id;
+        }
+        // If deletedAt is set, the project was intentionally deleted — ignore tracking events for it
       } else {
         // AUTO-CREATE project with default goals
         const newProject = await db.project.create({
