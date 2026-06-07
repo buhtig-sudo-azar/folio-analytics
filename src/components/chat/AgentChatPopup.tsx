@@ -3,12 +3,12 @@
 import { useChatStore } from '@/lib/analytics/chat-store';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
-import { X, Minimize2, Bot, Sparkles, BarChart3 } from 'lucide-react';
+import { X, Minimize2, Maximize2, Bot, Sparkles, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRef, useEffect, useCallback, useState } from 'react';
 
 export function AgentChatPopup() {
-  const { messages, isLoading, isOpen, setOpen, clearMessages } = useChatStore();
+  const { messages, isLoading, isOpen, isExpanded, setOpen, setExpanded, clearMessages } = useChatStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isMinimized, setIsMinimized] = useState(false);
 
@@ -22,12 +22,17 @@ export function AgentChatPopup() {
   const handleClose = useCallback(() => {
     setOpen(false);
     setIsMinimized(false);
+    setExpanded(false);
     clearMessages();
-  }, [setOpen, clearMessages]);
+  }, [setOpen, setExpanded, clearMessages]);
 
   const handleMinimize = useCallback(() => {
     setIsMinimized(true);
   }, []);
+
+  const handleToggleExpand = useCallback(() => {
+    setExpanded(!isExpanded);
+  }, [isExpanded, setExpanded]);
 
   const handleRestore = useCallback(() => {
     setIsMinimized(false);
@@ -81,7 +86,11 @@ export function AgentChatPopup() {
       className={`
         fixed z-50 flex flex-col
         bg-background border border-border shadow-2xl rounded-2xl overflow-hidden
-        sm:bottom-6 sm:right-6 sm:w-[400px] sm:max-h-[560px]
+        transition-all duration-300 ease-in-out
+        ${isExpanded
+          ? 'sm:bottom-6 sm:right-6 sm:w-[720px] sm:max-h-[80vh]'
+          : 'sm:bottom-6 sm:right-6 sm:w-[400px] sm:max-h-[560px]'
+        }
         max-sm:inset-x-3 max-sm:bottom-6 max-sm:top-auto max-sm:max-h-[75vh]
         animate-in slide-in-from-bottom-4 fade-in duration-200
       `}
@@ -98,6 +107,15 @@ export function AgentChatPopup() {
             <p className="text-xs text-muted-foreground">AI-эксперт по веб-аналитике</p>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 hover:bg-muted"
+              onClick={handleToggleExpand}
+              aria-label={isExpanded ? 'Сузить чат' : 'Расширить чат'}
+            >
+              {isExpanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+            </Button>
             <Button
               variant="ghost"
               size="icon"

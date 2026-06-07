@@ -11,10 +11,12 @@ interface ChatState {
   messages: ChatMessage[];
   isLoading: boolean;
   isOpen: boolean;
+  isExpanded: boolean;
   addMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
   appendToLastMessage: (content: string) => void;
   setLoading: (loading: boolean) => void;
   setOpen: (open: boolean) => void;
+  setExpanded: (expanded: boolean) => void;
   clearMessages: () => void;
 }
 
@@ -22,6 +24,7 @@ export const useChatStore = create<ChatState>((set) => ({
   messages: [],
   isLoading: false,
   isOpen: false,
+  isExpanded: false,
   addMessage: (message) =>
     set((s) => ({
       messages: [
@@ -40,5 +43,6 @@ export const useChatStore = create<ChatState>((set) => ({
     }),
   setLoading: (loading) => set({ isLoading: loading }),
   setOpen: (open) => set({ isOpen: open }),
+  setExpanded: (expanded) => set({ isExpanded: expanded }),
   clearMessages: () => set({ messages: [] }),
 }));
