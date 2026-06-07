@@ -173,7 +173,7 @@ export function DashboardSidebar() {
                   <TooltipTrigger asChild>
                     {button}
                   </TooltipTrigger>
-                  <TooltipContent side="right" className="max-w-[250px]">
+                  <TooltipContent className="max-w-[250px]">
                     <p className="font-medium">{label}</p>
                     <p className="text-xs opacity-80 mt-1">{description}</p>
                   </TooltipContent>
@@ -186,7 +186,7 @@ export function DashboardSidebar() {
                 <TooltipTrigger asChild>
                   {button}
                 </TooltipTrigger>
-                <TooltipContent side="right" className="max-w-[280px]">
+                <TooltipContent className="max-w-[280px]">
                   <p className="text-xs opacity-80">{description}</p>
                 </TooltipContent>
               </Tooltip>
@@ -209,7 +209,7 @@ export function DashboardSidebar() {
                     <span className="text-sm">Как пользоваться</span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="max-w-[250px]">
+                <TooltipContent className="max-w-[250px]">
                   <p className="text-xs opacity-80">Показать справку и описание всех разделов панели</p>
                 </TooltipContent>
               </Tooltip>

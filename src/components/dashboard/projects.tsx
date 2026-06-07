@@ -272,7 +272,7 @@ export function ProjectsSection() {
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="right" className="max-w-[250px]">
+          <TooltipContent className="max-w-[250px]">
             <p className="text-xs">Проект с наибольшим количеством просмотров за выбранный период</p>
           </TooltipContent>
         </Tooltip>
@@ -293,7 +293,7 @@ export function ProjectsSection() {
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="right" className="max-w-[250px]">
+          <TooltipContent className="max-w-[250px]">
             <p className="text-xs">Проект с наибольшей активностью (кол-во событий) за выбранный период</p>
           </TooltipContent>
         </Tooltip>
@@ -316,7 +316,7 @@ export function ProjectsSection() {
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="right" className="max-w-[250px]">
+          <TooltipContent className="max-w-[250px]">
             <p className="text-xs">Проект с самым высоким процентом открытий демо относительно просмотров</p>
           </TooltipContent>
         </Tooltip>
@@ -346,7 +346,7 @@ export function ProjectsSection() {
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="right" className="max-w-[250px]">
+          <TooltipContent className="max-w-[250px]">
             <p className="text-xs">Сравнение проектов по просмотрам (зелёный) и уникальным посетителям (синий)</p>
           </TooltipContent>
         </Tooltip>
@@ -430,7 +430,7 @@ export function ProjectsSection() {
                         <div className="text-xs text-muted-foreground">Просмотры</div>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent side="right">
+                    <TooltipContent>
                       <p className="text-xs">Общее количество просмотров за период</p>
                     </TooltipContent>
                   </Tooltip>
@@ -441,7 +441,7 @@ export function ProjectsSection() {
                         <div className="text-xs text-muted-foreground">Посетители</div>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent side="right">
+                    <TooltipContent>
                       <p className="text-xs">Уникальные посетители за период</p>
                     </TooltipContent>
                   </Tooltip>
@@ -452,7 +452,7 @@ export function ProjectsSection() {
                         <div className="text-xs text-muted-foreground">Открытия</div>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent side="right">
+                    <TooltipContent>
                       <p className="text-xs">Сколько раз открыли демо/подробности проекта</p>
                     </TooltipContent>
                   </Tooltip>
@@ -463,7 +463,7 @@ export function ProjectsSection() {
                         <div className="text-xs text-muted-foreground">Цели</div>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent side="right">
+                    <TooltipContent>
                       <p className="text-xs">Количество отслеживаемых целей (автосоздание при подключении)</p>
                     </TooltipContent>
                   </Tooltip>
@@ -477,7 +477,7 @@ export function ProjectsSection() {
                         <div className="h-full rounded-full bg-emerald-500" style={{ width: `${((a?.views || 0) / maxViews) * 100}%` }} />
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent side="right">
+                    <TooltipContent>
                       <p className="text-xs">Доля просмотров этого проекта от самого популярного</p>
                     </TooltipContent>
                   </Tooltip>

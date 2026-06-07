@@ -309,7 +309,7 @@ curl -X POST "${serverOrigin}/api/track" \\
             </CardContent>
           </Card>
         </TooltipTrigger>
-        <TooltipContent side="right" className="max-w-[280px]">
+        <TooltipContent className="max-w-[280px]">
           <p className="text-xs">Методы JavaScript API для отслеживания событий на сайте. Можно вызывать из любого места вашего кода</p>
         </TooltipContent>
       </Tooltip>
@@ -341,7 +341,7 @@ curl -X POST "${serverOrigin}/api/track" \\
             </CardContent>
           </Card>
         </TooltipTrigger>
-        <TooltipContent side="right" className="max-w-[280px]">
+        <TooltipContent className="max-w-[280px]">
           <p className="text-xs">Команда для тестирования API вручную через терминал. Отправьте событие и проверьте, что оно появилось в дашборде</p>
         </TooltipContent>
       </Tooltip>
@@ -376,7 +376,7 @@ curl -X POST "${serverOrigin}/api/track" \\
             </CardContent>
           </Card>
         </TooltipTrigger>
-        <TooltipContent side="right" className="max-w-[280px]">
+        <TooltipContent className="max-w-[280px]">
           <p className="text-xs">Admin может всё — добавлять/удалять проекты, менять настройки. Analyst может только смотреть данные и отчёты</p>
         </TooltipContent>
       </Tooltip>
@@ -424,7 +424,7 @@ curl -X POST "${serverOrigin}/api/track" \\
             </CardContent>
           </Card>
         </TooltipTrigger>
-        <TooltipContent side="right" className="max-w-[250px]">
+        <TooltipContent className="max-w-[250px]">
           <p className="text-xs">Настройте, о каких событиях хотите получать уведомления. Включите/выключите нужные категории</p>
         </TooltipContent>
       </Tooltip>
@@ -459,7 +459,7 @@ curl -X POST "${serverOrigin}/api/track" \\
             </CardContent>
           </Card>
         </TooltipTrigger>
-        <TooltipContent side="right" className="max-w-[250px]">
+        <TooltipContent className="max-w-[250px]">
           <p className="text-xs">Техническая информация о системе. CORS нужен для кросс-доменного отслеживания</p>
         </TooltipContent>
       </Tooltip>

@@ -61,7 +61,7 @@ export function DashboardHeader() {
               {sectionLabels[activeSection]}
             </h1>
           </TooltipTrigger>
-          <TooltipContent side="right" className="max-w-[300px]">
+          <TooltipContent className="max-w-[300px]">
             <p className="text-xs">{sectionDescriptions[activeSection]}</p>
           </TooltipContent>
         </Tooltip>

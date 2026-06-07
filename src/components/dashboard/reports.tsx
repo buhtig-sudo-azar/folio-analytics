@@ -92,7 +92,7 @@ export function ReportsSection() {
                 </CardContent>
               </Card>
             </TooltipTrigger>
-            <TooltipContent side="right" className="max-w-[280px]">
+            <TooltipContent className="max-w-[280px]">
               <p className="text-xs">{report.hint}</p>
             </TooltipContent>
           </Tooltip>
@@ -149,7 +149,7 @@ export function ReportsSection() {
                         Скачать CSV
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent side="right">
+                    <TooltipContent>
                       <p className="text-xs">Скачать данные в формате CSV (откроется в Excel/Google Sheets)</p>
                     </TooltipContent>
                   </Tooltip>
@@ -160,7 +160,7 @@ export function ReportsSection() {
                         Скачать JSON
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent side="right">
+                    <TooltipContent>
                       <p className="text-xs">Скачать данные в формате JSON (для разработчиков и интеграций)</p>
                     </TooltipContent>
                   </Tooltip>
@@ -169,7 +169,7 @@ export function ReportsSection() {
             </CardContent>
           </Card>
         </TooltipTrigger>
-        <TooltipContent side="right" className="max-w-[280px]">
+        <TooltipContent className="max-w-[280px]">
           <p className="text-xs">Выберите период и тип данных, затем скачайте файл. CSV — для таблиц, JSON — для разработчиков</p>
         </TooltipContent>
       </Tooltip>
@@ -209,7 +209,7 @@ export function ReportsSection() {
             </CardContent>
           </Card>
         </TooltipTrigger>
-        <TooltipContent side="right" className="max-w-[250px]">
+        <TooltipContent className="max-w-[250px]">
           <p className="text-xs">Автоматические отчёты будут отправляться на почту (функция в разработке)</p>
         </TooltipContent>
       </Tooltip>

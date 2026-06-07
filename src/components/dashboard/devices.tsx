@@ -114,7 +114,7 @@ export function DevicesSection() {
                   </CardContent>
                 </Card>
               </TooltipTrigger>
-              <TooltipContent side="right" className="max-w-[250px]">
+              <TooltipContent className="max-w-[250px]">
                 <p className="text-xs">
                   {type === 'desktop' ? 'Пользователи с настольных компьютеров' :
                    type === 'laptop' ? 'Пользователи с ноутбуков' :

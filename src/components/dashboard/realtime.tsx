@@ -94,7 +94,7 @@ export function RealtimeSection() {
             <span className="text-sm text-muted-foreground">Обновление каждые 5 секунд</span>
           </div>
         </TooltipTrigger>
-        <TooltipContent side="right" className="max-w-[250px]">
+        <TooltipContent className="max-w-[250px]">
           <p className="text-xs">Данные обновляются автоматически каждые 5 секунд. Зелёный индикатор показывает наличие активности</p>
         </TooltipContent>
       </Tooltip>
@@ -118,7 +118,7 @@ export function RealtimeSection() {
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="right" className="max-w-[250px]">
+          <TooltipContent className="max-w-[250px]">
             <p className="text-xs">Уникальные посетители, проявившие активность за последние 5 минут</p>
           </TooltipContent>
         </Tooltip>
@@ -139,7 +139,7 @@ export function RealtimeSection() {
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="right" className="max-w-[250px]">
+          <TooltipContent className="max-w-[250px]">
             <p className="text-xs">Страницы вашего сайта, которые прямо сейчас просматривают посетители</p>
           </TooltipContent>
         </Tooltip>
@@ -160,7 +160,7 @@ export function RealtimeSection() {
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="right" className="max-w-[250px]">
+          <TooltipContent className="max-w-[250px]">
             <p className="text-xs">Проекты из портфолио, которые прямо сейчас просматривают</p>
           </TooltipContent>
         </Tooltip>
@@ -181,7 +181,7 @@ export function RealtimeSection() {
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="right" className="max-w-[250px]">
+          <TooltipContent className="max-w-[250px]">
             <p className="text-xs">Количество стран, из которых прямо сейчас идут посещения</p>
           </TooltipContent>
         </Tooltip>
@@ -212,7 +212,7 @@ export function RealtimeSection() {
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="right" className="max-w-[250px]">
+          <TooltipContent className="max-w-[250px]">
             <p className="text-xs">Список страниц, которые прямо сейчас открыты у посетителей</p>
           </TooltipContent>
         </Tooltip>
@@ -237,7 +237,7 @@ export function RealtimeSection() {
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="right" className="max-w-[250px]">
+          <TooltipContent className="max-w-[250px]">
             <p className="text-xs">Страны, из которых прямо сейчас заходят посетители</p>
           </TooltipContent>
         </Tooltip>
@@ -291,7 +291,7 @@ export function RealtimeSection() {
             </CardContent>
           </Card>
         </TooltipTrigger>
-        <TooltipContent side="right" className="max-w-[250px]">
+        <TooltipContent className="max-w-[250px]">
           <p className="text-xs">Лента последних действий посетителей в реальном времени. Наведите на событие для подробностей</p>
         </TooltipContent>
       </Tooltip>
