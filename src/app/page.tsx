@@ -15,6 +15,7 @@ import { PagesSection } from '@/components/dashboard/pages';
 import { ReportsSection } from '@/components/dashboard/reports';
 import { SettingsSection } from '@/components/dashboard/settings';
 import { OnboardingDialog } from '@/components/dashboard/onboarding';
+import { AgentChatPopup } from '@/components/chat/AgentChatPopup';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -54,6 +55,7 @@ export default function Home() {
           </main>
         </div>
         <OnboardingDialog />
+        <AgentChatPopup />
       </div>
     </TooltipProvider>
   );
