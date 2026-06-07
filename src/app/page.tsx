@@ -53,6 +53,11 @@ export default function Home() {
           <main className="p-3 md:p-6">
             {renderSection()}
           </main>
+          <footer className="px-4 py-2 border-t border-border/50 text-center">
+            <span className="text-[11px] text-muted-foreground/60 tracking-widest font-medium">
+              created by{' '}<span className="text-foreground/70 font-bold">AZAR</span>
+            </span>
+          </footer>
         </div>
         <OnboardingDialog />
         <AgentChatPopup />
