@@ -132,7 +132,7 @@ export function ProjectsSection() {
     if (!confirm('Удалить проект и все связанные данные?')) return;
     try {
       await deleteProject(id);
-      loadData();
+      window.location.reload();
     } catch (e) {
       console.error('Failed to delete project:', e);
     }
