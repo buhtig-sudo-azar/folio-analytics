@@ -41,6 +41,12 @@ export async function createProject(data: { projectId: string; name: string; url
   return res.json();
 }
 
+export async function deleteProject(id: string) {
+  const res = await fetch(`/api/projects?id=${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Delete project failed');
+  return res.json();
+}
+
 export async function trackEvent(data: Record<string, unknown>) {
   try {
     const res = await fetch('/api/track', {

@@ -92,8 +92,8 @@ export function ReportsSection() {
                 </CardContent>
               </Card>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-[280px]">
-              <p className="text-xs text-primary-foreground/80">{report.hint}</p>
+            <TooltipContent side="right" className="max-w-[280px]">
+              <p className="text-xs">{report.hint}</p>
             </TooltipContent>
           </Tooltip>
         ))}
@@ -149,7 +149,7 @@ export function ReportsSection() {
                         Скачать CSV
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom">
+                    <TooltipContent side="right">
                       <p className="text-xs">Скачать данные в формате CSV (откроется в Excel/Google Sheets)</p>
                     </TooltipContent>
                   </Tooltip>
@@ -160,7 +160,7 @@ export function ReportsSection() {
                         Скачать JSON
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom">
+                    <TooltipContent side="right">
                       <p className="text-xs">Скачать данные в формате JSON (для разработчиков и интеграций)</p>
                     </TooltipContent>
                   </Tooltip>
@@ -169,8 +169,8 @@ export function ReportsSection() {
             </CardContent>
           </Card>
         </TooltipTrigger>
-        <TooltipContent side="bottom" className="max-w-[280px]">
-          <p className="text-xs text-primary-foreground/80">Выберите период и тип данных, затем скачайте файл. CSV — для таблиц, JSON — для разработчиков</p>
+        <TooltipContent side="right" className="max-w-[280px]">
+          <p className="text-xs">Выберите период и тип данных, затем скачайте файл. CSV — для таблиц, JSON — для разработчиков</p>
         </TooltipContent>
       </Tooltip>
 
@@ -201,7 +201,7 @@ export function ReportsSection() {
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="left" className="max-w-[250px]">
-                      <p className="text-xs text-primary-foreground/80">{report.hint}</p>
+                      <p className="text-xs">{report.hint}</p>
                     </TooltipContent>
                   </Tooltip>
                 ))}
@@ -209,8 +209,8 @@ export function ReportsSection() {
             </CardContent>
           </Card>
         </TooltipTrigger>
-        <TooltipContent side="bottom" className="max-w-[250px]">
-          <p className="text-xs text-primary-foreground/80">Автоматические отчёты будут отправляться на почту (функция в разработке)</p>
+        <TooltipContent side="right" className="max-w-[250px]">
+          <p className="text-xs">Автоматические отчёты будут отправляться на почту (функция в разработке)</p>
         </TooltipContent>
       </Tooltip>
     </div>

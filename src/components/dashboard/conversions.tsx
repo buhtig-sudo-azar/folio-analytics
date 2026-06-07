@@ -151,8 +151,8 @@ export function ConversionsSection() {
                         </div>
                       </TooltipTrigger>
                       <TooltipContent side="left" className="max-w-[280px]">
-                        <p className="text-xs text-primary-foreground/80">{funnelStepHints[step.name] || `Шаг воронки: ${step.name}`}</p>
-                        <p className="text-xs text-primary-foreground/60 mt-1">Потеря от предыдущего шага: {step.dropoff}% | Конверсия от начала: {step.conversionRate}%</p>
+                        <p className="text-xs">{funnelStepHints[step.name] || `Шаг воронки: ${step.name}`}</p>
+                        <p className="text-xs opacity-60 mt-1">Потеря от предыдущего шага: {step.dropoff}% | Конверсия от начала: {step.conversionRate}%</p>
                       </TooltipContent>
                     </Tooltip>
                   );
@@ -165,8 +165,8 @@ export function ConversionsSection() {
             </CardContent>
           </Card>
         </TooltipTrigger>
-        <TooltipContent side="bottom" className="max-w-[280px]">
-          <p className="text-xs text-primary-foreground/80">Воронка показывает путь посетителя от первого захода до целевого действия. Наведите на каждый шаг для подробностей</p>
+        <TooltipContent side="right" className="max-w-[280px]">
+          <p className="text-xs">Воронка показывает путь посетителя от первого захода до целевого действия. Наведите на каждый шаг для подробностей</p>
         </TooltipContent>
       </Tooltip>
 
@@ -203,8 +203,8 @@ export function ConversionsSection() {
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[250px]">
-            <p className="text-xs text-primary-foreground/80">Список отслеживаемых целей и сколько раз каждая была достигнута. Цели создаются автоматически при подключении проекта</p>
+          <TooltipContent side="right" className="max-w-[250px]">
+            <p className="text-xs">Список отслеживаемых целей и сколько раз каждая была достигнута. Цели создаются автоматически при подключении проекта</p>
           </TooltipContent>
         </Tooltip>
 
@@ -240,8 +240,8 @@ export function ConversionsSection() {
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[250px]">
-            <p className="text-xs text-primary-foreground/80">График количества конверсий по каждой цели за выбранный период</p>
+          <TooltipContent side="right" className="max-w-[250px]">
+            <p className="text-xs">График количества конверсий по каждой цели за выбранный период</p>
           </TooltipContent>
         </Tooltip>
       </div>
@@ -263,8 +263,8 @@ export function ConversionsSection() {
             </CardContent>
           </Card>
         </TooltipTrigger>
-        <TooltipContent side="bottom" className="max-w-[250px]">
-          <p className="text-xs text-primary-foreground/80">Общее количество целевых действий за выбранный период. Целевое действие — это когда посетитель совершает нужное вам действие (открыл демо, отправил форму и т.д.)</p>
+        <TooltipContent side="right" className="max-w-[250px]">
+          <p className="text-xs">Общее количество целевых действий за выбранный период. Целевое действие — это когда посетитель совершает нужное вам действие (открыл демо, отправил форму и т.д.)</p>
         </TooltipContent>
       </Tooltip>
     </div>

@@ -121,8 +121,8 @@ export function OverviewSection() {
                   </CardContent>
                 </Card>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-[280px]">
-                <p className="text-xs text-primary-foreground/80">{card.hint}</p>
+              <TooltipContent side="right" className="max-w-[280px]">
+                <p className="text-xs">{card.hint}</p>
               </TooltipContent>
             </Tooltip>
           );
@@ -175,8 +175,8 @@ export function OverviewSection() {
             </CardContent>
           </Card>
         </TooltipTrigger>
-        <TooltipContent side="bottom" className="max-w-[300px]">
-          <p className="text-xs text-primary-foreground/80">График показывает динамику просмотров (зелёный) и уникальных посетителей (синий) по дням за выбранный период</p>
+        <TooltipContent side="right" className="max-w-[300px]">
+          <p className="text-xs">График показывает динамику просмотров (зелёный) и уникальных посетителей (синий) по дням за выбранный период</p>
         </TooltipContent>
       </Tooltip>
 
@@ -209,8 +209,8 @@ export function OverviewSection() {
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[250px]">
-            <p className="text-xs text-primary-foreground/80">Рейтинг стран, из которых приходят посетители. Данные основаны на IP-адресе</p>
+          <TooltipContent side="right" className="max-w-[250px]">
+            <p className="text-xs">Рейтинг стран, из которых приходят посетители. Данные основаны на IP-адресе</p>
           </TooltipContent>
         </Tooltip>
 
@@ -261,8 +261,8 @@ export function OverviewSection() {
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[250px]">
-            <p className="text-xs text-primary-foreground/80">Распределение посетителей по типам устройств: десктоп, мобильный, планшет</p>
+          <TooltipContent side="right" className="max-w-[250px]">
+            <p className="text-xs">Распределение посетителей по типам устройств: десктоп, мобильный, планшет</p>
           </TooltipContent>
         </Tooltip>
 
@@ -295,8 +295,8 @@ export function OverviewSection() {
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[250px]">
-            <p className="text-xs text-primary-foreground/80">Откуда приходят посетители: прямые переходы, поисковые системы, социальные сети, ссылки с других сайтов</p>
+          <TooltipContent side="right" className="max-w-[250px]">
+            <p className="text-xs">Откуда приходят посетители: прямые переходы, поисковые системы, социальные сети, ссылки с других сайтов</p>
           </TooltipContent>
         </Tooltip>
       </div>

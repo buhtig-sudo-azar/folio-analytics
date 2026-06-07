@@ -61,8 +61,8 @@ export function DashboardHeader() {
               {sectionLabels[activeSection]}
             </h1>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[300px]">
-            <p className="text-xs text-primary-foreground/80">{sectionDescriptions[activeSection]}</p>
+          <TooltipContent side="right" className="max-w-[300px]">
+            <p className="text-xs">{sectionDescriptions[activeSection]}</p>
           </TooltipContent>
         </Tooltip>
       </div>
@@ -91,7 +91,7 @@ export function DashboardHeader() {
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-[250px]">
               <p className="font-medium text-xs">Фильтр по проекту</p>
-              <p className="text-xs text-primary-foreground/80 mt-1">Выберите конкретный сайт для фильтрации данных, или оставьте «Все проекты» для общей статистики</p>
+              <p className="text-xs mt-1">Выберите конкретный сайт для фильтрации данных, или оставьте «Все проекты» для общей статистики</p>
             </TooltipContent>
           </Tooltip>
         )}
@@ -116,7 +116,7 @@ export function DashboardHeader() {
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-[250px]">
             <p className="font-medium text-xs">Период</p>
-            <p className="text-xs text-primary-foreground/80 mt-1">{periodDescriptions[period]}</p>
+            <p className="text-xs mt-1">{periodDescriptions[period]}</p>
           </TooltipContent>
         </Tooltip>
 
@@ -127,7 +127,7 @@ export function DashboardHeader() {
               <Bell className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">
+          <TooltipContent side="left">
             <p className="text-xs">Уведомления — пока нет новых</p>
           </TooltipContent>
         </Tooltip>
@@ -145,7 +145,7 @@ export function DashboardHeader() {
                 {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom">
+            <TooltipContent side="left">
               <p className="text-xs">{theme === 'dark' ? 'Переключить на светлую тему' : 'Переключить на тёмную тему'}</p>
             </TooltipContent>
           </Tooltip>

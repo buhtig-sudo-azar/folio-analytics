@@ -94,8 +94,8 @@ export function RealtimeSection() {
             <span className="text-sm text-muted-foreground">Обновление каждые 5 секунд</span>
           </div>
         </TooltipTrigger>
-        <TooltipContent side="bottom" className="max-w-[250px]">
-          <p className="text-xs text-primary-foreground/80">Данные обновляются автоматически каждые 5 секунд. Зелёный индикатор показывает наличие активности</p>
+        <TooltipContent side="right" className="max-w-[250px]">
+          <p className="text-xs">Данные обновляются автоматически каждые 5 секунд. Зелёный индикатор показывает наличие активности</p>
         </TooltipContent>
       </Tooltip>
 
@@ -114,12 +114,12 @@ export function RealtimeSection() {
                 <div className="text-3xl font-bold text-emerald-500">
                   {data ? data.activeVisitors : '—'}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">Активные сейчас</p>
+                <p className="text-xstext-muted-foreground mt-1">Активные сейчас</p>
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[250px]">
-            <p className="text-xs text-primary-foreground/80">Уникальные посетители, проявившие активность за последние 5 минут</p>
+          <TooltipContent side="right" className="max-w-[250px]">
+            <p className="text-xs">Уникальные посетители, проявившие активность за последние 5 минут</p>
           </TooltipContent>
         </Tooltip>
 
@@ -135,12 +135,12 @@ export function RealtimeSection() {
                 <div className="text-2xl font-bold">
                   {data ? data.activePages.length : '—'}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">Активные страницы</p>
+                <p className="text-xstext-muted-foreground mt-1">Активные страницы</p>
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[250px]">
-            <p className="text-xs text-primary-foreground/80">Страницы вашего сайта, которые прямо сейчас просматривают посетители</p>
+          <TooltipContent side="right" className="max-w-[250px]">
+            <p className="text-xs">Страницы вашего сайта, которые прямо сейчас просматривают посетители</p>
           </TooltipContent>
         </Tooltip>
 
@@ -156,12 +156,12 @@ export function RealtimeSection() {
                 <div className="text-2xl font-bold">
                   {data ? data.activeProjects.length : '—'}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">Активные проекты</p>
+                <p className="text-xstext-muted-foreground mt-1">Активные проекты</p>
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[250px]">
-            <p className="text-xs text-primary-foreground/80">Проекты из портфолио, которые прямо сейчас просматривают</p>
+          <TooltipContent side="right" className="max-w-[250px]">
+            <p className="text-xs">Проекты из портфолио, которые прямо сейчас просматривают</p>
           </TooltipContent>
         </Tooltip>
 
@@ -177,12 +177,12 @@ export function RealtimeSection() {
                 <div className="text-2xl font-bold">
                   {data ? data.activeCountries.length : '—'}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">Страны</p>
+                <p className="text-xstext-muted-foreground mt-1">Страны</p>
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[250px]">
-            <p className="text-xs text-primary-foreground/80">Количество стран, из которых прямо сейчас идут посещения</p>
+          <TooltipContent side="right" className="max-w-[250px]">
+            <p className="text-xs">Количество стран, из которых прямо сейчас идут посещения</p>
           </TooltipContent>
         </Tooltip>
       </div>
@@ -212,8 +212,8 @@ export function RealtimeSection() {
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[250px]">
-            <p className="text-xs text-primary-foreground/80">Список страниц, которые прямо сейчас открыты у посетителей</p>
+          <TooltipContent side="right" className="max-w-[250px]">
+            <p className="text-xs">Список страниц, которые прямо сейчас открыты у посетителей</p>
           </TooltipContent>
         </Tooltip>
 
@@ -237,8 +237,8 @@ export function RealtimeSection() {
               </CardContent>
             </Card>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[250px]">
-            <p className="text-xs text-primary-foreground/80">Страны, из которых прямо сейчас заходят посетители</p>
+          <TooltipContent side="right" className="max-w-[250px]">
+            <p className="text-xs">Страны, из которых прямо сейчас заходят посетители</p>
           </TooltipContent>
         </Tooltip>
       </div>
@@ -265,21 +265,21 @@ export function RealtimeSection() {
                             {eventLabels[event.eventType] || event.eventType}
                           </span>
                           {event.page && (
-                            <span className="text-xs text-muted-foreground font-mono">{event.page}</span>
+                            <span className="text-xstext-muted-foreground font-mono">{event.page}</span>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
                           {event.country && (
                             <Badge variant="outline" className="text-xs">{event.country}</Badge>
                           )}
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xstext-muted-foreground">
                             {new Date(event.timestamp).toLocaleTimeString('ru')}
                           </span>
                         </div>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="left" className="max-w-[250px]">
-                      <p className="text-xs text-primary-foreground/80">{eventHints[event.eventType] || 'Действие посетителя на сайте'}</p>
+                      <p className="text-xs">{eventHints[event.eventType] || 'Действие посетителя на сайте'}</p>
                     </TooltipContent>
                   </Tooltip>
                 )) : (
@@ -291,8 +291,8 @@ export function RealtimeSection() {
             </CardContent>
           </Card>
         </TooltipTrigger>
-        <TooltipContent side="bottom" className="max-w-[250px]">
-          <p className="text-xs text-primary-foreground/80">Лента последних действий посетителей в реальном времени. Наведите на событие для подробностей</p>
+        <TooltipContent side="right" className="max-w-[250px]">
+          <p className="text-xs">Лента последних действий посетителей в реальном времени. Наведите на событие для подробностей</p>
         </TooltipContent>
       </Tooltip>
     </div>
