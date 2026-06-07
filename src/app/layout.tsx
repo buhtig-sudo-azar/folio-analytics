@@ -16,9 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "ADMIN Panel",
-  description: "Централизованная панель аналитики для ваших сайтов. Автоматический сбор статистики, конверсии, рейтинги проектов.",
-  keywords: ["analytics", "dashboard", "admin", "Next.js", "TypeScript"],
-  authors: [{ name: "ADMIN Panel" }],
+  description: "Централизованная панель аналитики для ваших сайтов",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "48x48" },

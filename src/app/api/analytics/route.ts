@@ -578,7 +578,7 @@ async function getComparison(searchParams: URLSearchParams) {
   const period = searchParams.get('period') || '30d';
 
   if (!projectA || !projectB) {
-    return { error: 'projectA and projectB required' };
+    return { projectA: null, projectB: null };
   }
 
   const since = getDateFilter(period);

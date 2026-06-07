@@ -75,8 +75,8 @@ export function ConversionsSection() {
         fetchAnalytics('funnel', params),
         fetchAnalytics('conversions', params),
       ]);
-      setFunnel(funnelData);
-      setConversions(convData);
+      setFunnel(funnelData || []);
+      setConversions(convData || { total: 0, byGoal: [], recent: [] });
     } catch (e) {
       console.error('Failed to load conversions:', e);
     } finally {

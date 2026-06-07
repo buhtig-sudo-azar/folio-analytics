@@ -17,9 +17,11 @@ import { SettingsSection } from '@/components/dashboard/settings';
 import { OnboardingDialog } from '@/components/dashboard/onboarding';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function Home() {
   const { activeSection, sidebarOpen } = useAppStore();
+  const isMobile = useIsMobile();
 
   const renderSection = () => {
     switch (activeSection) {
@@ -44,10 +46,10 @@ export default function Home() {
         <DashboardSidebar />
         <div className={cn(
           'transition-all duration-300',
-          sidebarOpen ? 'ml-64' : 'ml-16'
+          isMobile ? 'ml-0' : (sidebarOpen ? 'ml-64' : 'ml-16')
         )}>
           <DashboardHeader />
-          <main className="p-6">
+          <main className="p-3 md:p-6">
             {renderSection()}
           </main>
         </div>

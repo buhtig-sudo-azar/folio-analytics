@@ -17,6 +17,7 @@ import {
   ChevronRight,
   BarChart3,
   HelpCircle,
+  Menu,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const navItems: { section: Section; icon: React.ElementType; label?: string }[] = [
   { section: 'overview', icon: LayoutDashboard },
@@ -42,9 +50,76 @@ const navItems: { section: Section; icon: React.ElementType; label?: string }[] 
   { section: 'settings', icon: Settings },
 ];
 
+function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+  const { activeSection, setActiveSection } = useAppStore();
+
+  return (
+    <nav className="p-2 space-y-1">
+      {navItems.map((item) => {
+        const Icon = item.icon;
+        const label = item.label || sectionLabels[item.section];
+        const isActive = activeSection === item.section;
+
+        return (
+          <Button
+            key={item.section}
+            variant={isActive ? 'secondary' : 'ghost'}
+            className="w-full justify-start gap-3 h-10"
+            onClick={() => {
+              setActiveSection(item.section);
+              onNavigate?.();
+            }}
+          >
+            <Icon className={cn('h-4 w-4 shrink-0', isActive && 'text-primary')} />
+            <span className="text-sm">{label}</span>
+          </Button>
+        );
+      })}
+    </nav>
+  );
+}
+
 export function DashboardSidebar() {
   const { activeSection, setActiveSection, sidebarOpen, setSidebarOpen, setShowOnboarding } = useAppStore();
+  const isMobile = useIsMobile();
 
+  // Mobile: Sheet-based sidebar
+  if (isMobile) {
+    return (
+      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <SheetContent side="left" className="w-72 p-0">
+          <SheetHeader className="p-4 pb-2">
+            <SheetTitle className="flex items-center gap-2">
+              <BarChart3 className="h-6 w-6 text-primary" />
+              ADMIN Panel
+            </SheetTitle>
+          </SheetHeader>
+          <ScrollArea className="h-[calc(100vh-5rem)]">
+            <SidebarNav onNavigate={() => setSidebarOpen(false)} />
+            <Separator className="mx-4 my-2" />
+            <div className="px-2">
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-3 h-10 text-muted-foreground hover:text-foreground"
+                onClick={() => { setShowOnboarding(true); setSidebarOpen(false); }}
+              >
+                <HelpCircle className="h-4 w-4 shrink-0" />
+                <span className="text-sm">Как пользоваться</span>
+              </Button>
+            </div>
+            <Separator className="mx-4 my-2" />
+            <div className="px-4 py-2">
+              <p className="text-xs text-muted-foreground">
+                ADMIN Panel — аналитика ваших сайтов
+              </p>
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  // Desktop: Fixed sidebar
   return (
     <aside
       className={cn(
@@ -92,7 +167,6 @@ export function DashboardSidebar() {
               </Button>
             );
 
-            // Show tooltip when sidebar is collapsed OR always for extra info
             if (!sidebarOpen) {
               return (
                 <Tooltip key={item.section}>
@@ -123,8 +197,6 @@ export function DashboardSidebar() {
         {sidebarOpen && (
           <>
             <Separator className="mx-4 my-2" />
-
-            {/* Help button */}
             <div className="px-2">
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -142,7 +214,6 @@ export function DashboardSidebar() {
                 </TooltipContent>
               </Tooltip>
             </div>
-
             <Separator className="mx-4 my-2" />
             <div className="px-4 py-2">
               <p className="text-xs text-muted-foreground">

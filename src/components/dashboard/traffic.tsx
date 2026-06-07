@@ -73,8 +73,8 @@ export function TrafficSection() {
         fetchAnalytics('traffic', params),
         fetchAnalytics('utm', params),
       ]);
-      setTraffic(trafData);
-      setUTM(utmData);
+      setTraffic(trafData || { sources: [], details: [] });
+      setUTM(utmData || { sources: [], mediums: [], campaigns: [], contents: [], terms: [] });
     } catch (e) {
       console.error('Failed to load traffic:', e);
     } finally {

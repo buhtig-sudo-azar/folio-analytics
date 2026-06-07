@@ -48,12 +48,6 @@ const regionMap: Record<string, string> = {
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#84cc16', '#14b8a6'];
 
-class CustomTreemapContent extends Treemap {
-  render() {
-    return null;
-  }
-}
-
 interface TreemapProps {
   x?: number;
   y?: number;
@@ -107,7 +101,7 @@ export function GeographySection() {
       const params: Record<string, string> = { period };
       if (selectedProject) params.projectId = selectedProject;
       const result = await fetchAnalytics('geography', params);
-      setData(result);
+      setData(result || { countries: [], cities: [] });
     } catch (e) {
       console.error('Failed to load geography:', e);
     } finally {

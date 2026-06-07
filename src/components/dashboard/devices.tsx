@@ -72,9 +72,9 @@ export function DevicesSection() {
         fetchAnalytics('browsers', params),
         fetchAnalytics('os', params),
       ]);
-      setDevices(devData);
-      setBrowsers(brData);
-      setOS(osData);
+      setDevices(devData || { devices: [], screenResolutions: [], models: [] });
+      setBrowsers(brData || []);
+      setOS(osData || []);
     } catch (e) {
       console.error('Failed to load devices:', e);
     } finally {

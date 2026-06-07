@@ -87,9 +87,15 @@ export function ComparisonSection() {
     setLoading(true);
     try {
       const data = await fetchAnalytics('comparison', { projectA, projectB, period });
-      setComparison(data);
+      // If API returns error object (no projectA/projectB data), treat as null
+      if (data && data.error) {
+        setComparison(null);
+      } else {
+        setComparison(data);
+      }
     } catch (e) {
       console.error('Comparison failed:', e);
+      setComparison(null);
     } finally {
       setLoading(false);
     }

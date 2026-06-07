@@ -39,7 +39,7 @@ export function PagesSection() {
       const params: Record<string, string> = { period };
       if (selectedProject) params.projectId = selectedProject;
       const data = await fetchAnalytics('pages', params);
-      setPages(data);
+      setPages(data || []);
     } catch (e) {
       console.error('Failed to load pages:', e);
     } finally {
