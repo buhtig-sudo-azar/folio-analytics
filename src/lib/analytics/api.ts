@@ -47,6 +47,26 @@ export async function deleteProject(id: string) {
   return res.json();
 }
 
+export async function clearProjectData(projectId: string) {
+  const res = await fetch('/api/projects/clear', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ projectId }),
+  });
+  if (!res.ok) throw new Error('Clear data failed');
+  return res.json();
+}
+
+export async function clearAllData() {
+  const res = await fetch('/api/projects/clear', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ all: true }),
+  });
+  if (!res.ok) throw new Error('Clear all data failed');
+  return res.json();
+}
+
 export async function trackEvent(data: Record<string, unknown>) {
   try {
     const res = await fetch('/api/track', {

@@ -23,6 +23,7 @@ import {
   Copy,
   Check,
   Trash2,
+  RotateCcw,
   Code,
   Activity,
   TrendingUp,
@@ -41,7 +42,7 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { fetchAnalytics, fetchProjects, createProject, deleteProject, formatNumber } from '@/lib/analytics/api';
+import { fetchAnalytics, fetchProjects, createProject, deleteProject, clearProjectData, formatNumber } from '@/lib/analytics/api';
 import { useAppStore } from '@/lib/analytics/store';
 import {
   Tooltip,
@@ -134,6 +135,17 @@ export function ProjectsSection() {
       loadData();
     } catch (e) {
       console.error('Failed to delete project:', e);
+    }
+  };
+
+  const handleClearData = async (projectId: string, name: string) => {
+    if (!confirm(`Очистить все данные проекта «${name}»? Проект останется, но вся статистика будет удалена.`)) return;
+    try {
+      const result = await clearProjectData(projectId);
+      alert(result.message || 'Данные очищены');
+      loadData();
+    } catch (e) {
+      console.error('Failed to clear data:', e);
     }
   };
 
@@ -397,6 +409,21 @@ export function ProjectsSection() {
                       </TooltipTrigger>
                       <TooltipContent side="left">
                         <p className="text-xs">{copiedId === project.id ? 'Скопировано!' : 'Скопировать трекер-код для вставки на сайт'}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-amber-500"
+                          onClick={() => handleClearData(project.projectId, project.name)}
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="left">
+                        <p className="text-xs">Очистить данные (сбросить статистику, проект останется)</p>
                       </TooltipContent>
                     </Tooltip>
                     <Tooltip>

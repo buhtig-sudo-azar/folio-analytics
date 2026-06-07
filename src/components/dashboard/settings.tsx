@@ -16,8 +16,11 @@ import {
   Link as LinkIcon,
   Globe,
   Zap,
+  RotateCcw,
+  AlertTriangle,
 } from 'lucide-react';
 import { useState } from 'react';
+import { clearAllData } from '@/lib/analytics/api';
 import {
   Tooltip,
   TooltipContent,
@@ -428,6 +431,66 @@ curl -X POST "${serverOrigin}/api/track" \\
           <p className="text-xs">Настройте, о каких событиях хотите получать уведомления. Включите/выключите нужные категории</p>
         </TooltipContent>
       </Tooltip>
+
+      {/* Data management */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <RotateCcw className="h-4 w-4 text-amber-500" />
+            Управление данными
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Очистка данных позволяет сбросить статистику и начать мониторинг с нуля.
+            Проекты и цели при этом сохраняются — удаляется только аналитика (события, сессии, конверсии).
+          </p>
+
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <strong className="text-foreground">Очистить данные отдельного проекта</strong> — нажмите кнопку{' '}
+              <RotateCcw className="h-3.5 w-3.5 text-amber-500 inline" /> на карточке проекта в разделе «Проекты».
+              Проект останется, а вся статистика будет удалена.
+            </div>
+          </div>
+
+          <div className="border border-destructive/30 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-medium text-destructive">Очистить все данные</h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Удалить всю аналитику по всем проектам. Проекты и цели сохранятся. Это действие необратимо.
+                </p>
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="gap-2 shrink-0 ml-4"
+                onClick={async () => {
+                  if (!confirm('Вы уверены? ВСЯ аналитика по ВСЕМ проектам будет удалена. Это действие нельзя отменить.')) return;
+                  if (!confirm('Точно? Все события, сессии и конверсии будут стёрты.')) return;
+                  try {
+                    const result = await clearAllData();
+                    alert(result.message || 'Все данные очищены');
+                    window.location.reload();
+                  } catch (e) {
+                    console.error('Clear all data failed:', e);
+                    alert('Ошибка при очистке данных');
+                  }
+                }}
+              >
+                <RotateCcw className="h-4 w-4" />
+                Очистить всё
+              </Button>
+            </div>
+          </div>
+
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-xs text-muted-foreground">
+            <strong className="text-foreground">Подсказки:</strong> двойной клик на любой карточке или элементе дашборда показывает всплывающую подсказку с описанием.
+          </div>
+        </CardContent>
+      </Card>
 
       {/* System info */}
       <Tooltip>
