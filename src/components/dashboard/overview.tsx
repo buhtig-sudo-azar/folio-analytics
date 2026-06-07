@@ -12,6 +12,9 @@ import {
   MousePointerClick,
   Globe,
   Monitor,
+  UserPlus,
+  UserCheck,
+  Repeat,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -42,11 +45,14 @@ interface OverviewData {
   pageViews: number;
   uniqueVisitors: number;
   sessions: number;
+  newVisitors: number;
+  returningVisitors: number;
   avgSessionDuration: number;
   bounceRate: number;
   projectViews: number;
   demoOpens: number;
   todayVisitors: number;
+  todaySessions: number;
   weekVisitors: number;
   monthVisitors: number;
   conversionRate: string | number;
@@ -92,18 +98,20 @@ export function OverviewSection() {
   }, [loadData]);
 
   const statCards = overview ? [
-    { title: 'Посетители сегодня', value: formatNumber(overview.todayVisitors), icon: Users, color: 'text-emerald-500', bg: 'bg-emerald-500/10', hint: 'Количество уникальных посетителей за текущий день (с 00:00)' },
-    { title: 'За неделю', value: formatNumber(overview.weekVisitors), icon: TrendingUp, color: 'text-blue-500', bg: 'bg-blue-500/10', hint: 'Общее количество событий за последние 7 дней' },
-    { title: 'За месяц', value: formatNumber(overview.monthVisitors), icon: Eye, color: 'text-purple-500', bg: 'bg-purple-500/10', hint: 'Общее количество событий за последние 30 дней' },
-    { title: 'Ср. длительность', value: formatDuration(overview.avgSessionDuration), icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10', hint: 'Среднее время, которое посетитель проводит на сайте за одну сессию' },
-    { title: 'Просмотры', value: formatNumber(overview.pageViews), icon: Activity, color: 'text-cyan-500', bg: 'bg-cyan-500/10', hint: 'Общее количество просмотров страниц за выбранный период' },
-    { title: 'Показатель отказов', value: `${overview.bounceRate}%`, icon: MousePointerClick, color: 'text-rose-500', bg: 'bg-rose-500/10', hint: 'Доля посетителей, которые ушли после просмотра только одной страницы (чем меньше — тем лучше)' },
+    { title: 'Людей сегодня', subtitle: `${overview.todaySessions} заходов`, value: formatNumber(overview.todayVisitors), icon: Users, color: 'text-emerald-500', bg: 'bg-emerald-500/10', hint: `Уникальных людей: ${overview.todayVisitors}, всего заходов (сессий): ${overview.todaySessions}. Один человек может заходить несколько раз — каждый заход = отдельная сессия` },
+    { title: 'Людей за неделю', value: formatNumber(overview.weekVisitors), icon: TrendingUp, color: 'text-blue-500', bg: 'bg-blue-500/10', hint: 'Уникальные люди за последние 7 дней. Один и тот же человек считается один раз, сколько бы раз ни заходил' },
+    { title: 'Людей за месяц', value: formatNumber(overview.monthVisitors), icon: Eye, color: 'text-purple-500', bg: 'bg-purple-500/10', hint: 'Уникальные люди за последние 30 дней. Один и тот же человек считается один раз, сколько бы раз ни заходил' },
+    { title: 'Новые', subtitle: `${overview.returningVisitors} возвр.`, value: formatNumber(overview.newVisitors), icon: UserPlus, color: 'text-sky-500', bg: 'bg-sky-500/10', hint: `Новых посетителей: ${overview.newVisitors}, возвращающихся: ${overview.returningVisitors}. Новый = первый визит, возвратившийся = был ранее` },
+    { title: 'Всего заходов', value: formatNumber(overview.sessions), icon: Repeat, color: 'text-amber-500', bg: 'bg-amber-500/10', hint: 'Общее количество сессий (заходов). Один человек может заходить несколько раз — каждая сессия длится до 30 мин неактивности' },
+    { title: 'Ср. длительность', value: formatDuration(overview.avgSessionDuration), icon: Clock, color: 'text-orange-500', bg: 'bg-orange-500/10', hint: 'Среднее время, которое посетитель проводит на сайте за одну сессию' },
+    { title: 'Просмотры', value: formatNumber(overview.pageViews), icon: Activity, color: 'text-cyan-500', bg: 'bg-cyan-500/10', hint: 'Общее количество просмотренных страниц. Один заход может включать несколько просмотров' },
+    { title: 'Показатель отказов', value: `${overview.bounceRate}%`, icon: MousePointerClick, color: 'text-rose-500', bg: 'bg-rose-500/10', hint: 'Доля заходов, где человек посмотрел одну страницу и ушёл (чем меньше — тем лучше)' },
   ] : [];
 
   return (
     <div className="space-y-6">
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {statCards.map((card) => {
           const Icon = card.icon;
           return (
@@ -118,10 +126,13 @@ export function OverviewSection() {
                     </div>
                     <div className="text-2xl font-bold">{loading ? '—' : card.value}</div>
                     <p className="text-xs text-muted-foreground mt-1">{card.title}</p>
+                    {card.subtitle && (
+                      <p className="text-[10px] text-muted-foreground/70 mt-0.5">{card.subtitle}</p>
+                    )}
                   </CardContent>
                 </Card>
               </TooltipTrigger>
-              <TooltipContent className="max-w-[280px]">
+              <TooltipContent className="max-w-[320px]">
                 <p className="text-xs">{card.hint}</p>
               </TooltipContent>
             </Tooltip>

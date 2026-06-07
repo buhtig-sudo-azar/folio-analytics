@@ -120,6 +120,12 @@ async function getOverview(since: Date, projectId?: string | null) {
     }),
   ]);
 
+  // New vs returning visitors (by session isNewUser flag)
+  const [newUserSessions, returningUserSessions] = await Promise.all([
+    db.analyticsSession.count({ where: { startedAt: { gte: since }, isNewUser: true } }),
+    db.analyticsSession.count({ where: { startedAt: { gte: since }, isNewUser: false } }),
+  ]);
+
   const avgDurationResult = await db.analyticsSession.aggregate({
     _avg: { duration: true },
     where: { startedAt: { gte: since } },
@@ -137,6 +143,8 @@ async function getOverview(since: Date, projectId?: string | null) {
     pageViews,
     uniqueVisitors: uniqueUsers.length,
     sessions,
+    newVisitors: newUserSessions,
+    returningVisitors: returningUserSessions,
     avgSessionDuration: Math.round(avgDurationResult._avg.duration || 0),
     bounceRate,
     projectViews,
@@ -144,6 +152,7 @@ async function getOverview(since: Date, projectId?: string | null) {
     contactOpens,
     linkClicks,
     todayVisitors: todayEvents.length,
+    todaySessions: await db.analyticsSession.count({ where: { startedAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } } }),
     weekVisitors: weekEvents.length,
     monthVisitors: monthEvents.length,
     conversionRate: pageViews > 0 ? ((projectViews + demoOpens) / pageViews * 100).toFixed(1) : 0,
