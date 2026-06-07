@@ -58,6 +58,30 @@
     return newId;
   }
 
+  // Fingerprint generation (lightweight)
+  function getFingerprint() {
+    try {
+      var parts = [
+        navigator.userAgent,
+        screen.width + 'x' + screen.height,
+        navigator.language,
+        Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+        (navigator.hardwareConcurrency || 0).toString(),
+        (navigator.deviceMemory || 0).toString()
+      ];
+      var str = parts.join('|');
+      var hash = 0;
+      for (var i = 0; i < str.length; i++) {
+        var char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+      }
+      return 'fp_' + Math.abs(hash).toString(36);
+    } catch(e) {
+      return '';
+    }
+  }
+
   function getUserId() {
     try {
       var stored = localStorage.getItem(USER_KEY);
@@ -73,6 +97,26 @@
     var ua = navigator.userAgent;
     if (/iPad|Android(?!.*Mobile)/i.test(ua)) return 'tablet';
     if (/Mobile|iPhone|Android.*Mobile/i.test(ua)) return 'mobile';
+
+    // Laptop vs Desktop: use screen resolution heuristics
+    var w = screen.width;
+    var h = screen.height;
+
+    // macOS = most likely laptop (MacBooks dominate)
+    if (/Mac OS X/.test(ua)) {
+      if (w === 5120 && h === 2880) return 'desktop'; // iMac/Pro Display XDR
+      if (w === 6016 && h === 3384) return 'desktop'; // Apple Pro Display XDR 6K
+      return 'laptop'; // Most Macs are laptops
+    }
+
+    // Windows/Linux: small screen = laptop
+    if (h <= 900) return 'laptop'; // 768, 864, 900 etc
+    if (h === 1080) {
+      // Scaled resolutions like 1536x864 = laptop with 125%/150% scaling
+      var laptopWidths = [1280, 1360, 1366, 1440, 1536, 1600, 1680];
+      if (laptopWidths.indexOf(w) !== -1) return 'laptop';
+    }
+
     return 'desktop';
   }
 
@@ -131,6 +175,7 @@
       eventType: eventType,
       sessionId: sessionId,
       userId: userId,
+      fingerprint: getFingerprint(),
       page: window.location.pathname + window.location.search,
       pageTitle: document.title,
       referrer: document.referrer,
@@ -140,6 +185,7 @@
       deviceType: getDeviceType(),
       screenRes: getScreenRes(),
       language: navigator.language,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
     }, utm, eventData || {});
 
     if (geoCache) {

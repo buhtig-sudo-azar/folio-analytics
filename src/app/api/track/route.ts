@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { parseUserAgent, classifyTrafficSource } from '@/lib/analytics/ua-parser';
+import { parseUserAgent, classifyTrafficSource, detectDeviceType, generateFingerprint } from '@/lib/analytics/ua-parser';
 
 // CORS headers for cross-origin tracking
 const CORS_HEADERS = {
@@ -29,7 +29,8 @@ export async function POST(req: NextRequest) {
       pageTitle,
       referrer,
       sessionId,
-      userId,
+      userId: clientUserId,
+      fingerprint: clientFingerprint,
       utmSource,
       utmMedium,
       utmCampaign,
@@ -40,6 +41,7 @@ export async function POST(req: NextRequest) {
       deviceType: clientDeviceType,
       screenRes,
       language,
+      timezone: clientTimezone,
       country: clientCountry,
       city: clientCity,
       projectId: rawProjectId,
@@ -55,7 +57,37 @@ export async function POST(req: NextRequest) {
 
     const browser = clientBrowser || uaInfo.browser;
     const os = clientOs || uaInfo.os;
-    const deviceType = clientDeviceType || uaInfo.deviceType;
+    // Use enhanced device detection (laptop vs desktop) with screen resolution
+    const deviceType = clientDeviceType || detectDeviceType(uaString, screenRes);
+
+    // Hybrid user identification: fingerprint matching
+    // If userId from localStorage exists → use it (most reliable)
+    // If not (cleared cache) → try to find existing user by fingerprint
+    let userId = clientUserId || '';
+    const serverFingerprint = generateFingerprint({
+      userAgent: uaString,
+      screenRes: screenRes || '',
+      language: language || '',
+      ip: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '',
+      timezone: clientTimezone || '',
+    });
+    const fingerprint = clientFingerprint || serverFingerprint;
+
+    if (!userId && fingerprint) {
+      // No localStorage userId — try to match by fingerprint
+      const existingEvent = await db.event.findFirst({
+        where: { metadata: { contains: fingerprint } },
+        select: { userId: true },
+        orderBy: { timestamp: 'desc' },
+        take: 1,
+      });
+      if (existingEvent?.userId) {
+        userId = existingEvent.userId; // Restore the known user ID
+      }
+    }
+    if (!userId) {
+      userId = `u_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    }
 
     // AUTO-DISCOVER: If projectId sent but not in DB → create project + goals automatically
     // But if project was soft-deleted, skip auto-recreation
@@ -110,7 +142,7 @@ export async function POST(req: NextRequest) {
     const event = await db.event.create({
       data: {
         sessionId: sessionId || `s_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-        userId: userId || `anon_${Date.now()}`,
+        userId,
         eventType: eventType || 'page_view',
         eventName: eventName || null,
         page: page || null,
@@ -135,7 +167,7 @@ export async function POST(req: NextRequest) {
         utmContent: utmContent || null,
         utmTerm: utmTerm || null,
         value: value || null,
-        metadata: metadata ? JSON.stringify(metadata) : null,
+        metadata: JSON.stringify({ ...(typeof metadata === 'object' ? metadata : {}), fp: fingerprint }),
         projectId: projectDbId,
       },
     });
@@ -164,13 +196,13 @@ export async function POST(req: NextRequest) {
         });
       } else {
         const isReturning = (await db.analyticsSession.findFirst({
-          where: { userId: userId || '' },
+          where: { userId },
         })) !== null;
 
         await db.analyticsSession.create({
           data: {
             sessionId,
-            userId: userId || `anon_${Date.now()}`,
+            userId,
             browser,
             os,
             deviceType,

@@ -79,11 +79,6 @@ export function parseUserAgent(ua: string): UAInfo {
   if (/Tablet|iPad/.test(ua)) {
     result.deviceType = 'tablet';
   }
-  // Laptop detection (heuristic: Mac/Windows with no touch indication)
-  if (result.deviceType === 'desktop' && (result.os === 'macOS' || result.os === 'Windows')) {
-    // Can't reliably distinguish laptop from desktop in UA alone
-    // Keep as desktop
-  }
 
   return result;
 }
@@ -134,15 +129,84 @@ export function classifyTrafficSource(referrer: string, utmSource?: string): { s
   }
 }
 
+// Detect laptop by screen resolution heuristic
+// Laptops typically have: 1366x768, 1536x864, 1440x900, 1280x800, 1600x900
+// Desktops typically have: 1920x1080+, 2560x1440, 3840x2160
+// MacBooks: 1440x900, 1680x1050, 2560x1600, 3024x1964
+export function detectDeviceType(ua: string, screenRes?: string): string {
+  // Mobile/tablet from UA — check FIRST (before screen heuristics)
+  if (/iPhone|iPod/i.test(ua)) return 'mobile';
+  if (/Android.*Mobile|Mobile.*Android/i.test(ua)) return 'mobile';
+  if (/Mobile|Windows Phone/i.test(ua)) return 'mobile';
+  if (/iPad|Tablet|Android(?!.*Mobile)/i.test(ua)) return 'tablet';
+  // Also detect mobile by screen size (portrait small screen)
+  if (screenRes) {
+    const m = screenRes.match(/(\d+)x(\d+)/);
+    if (m) {
+      const sw = parseInt(m[1]), sh = parseInt(m[2]);
+      const minDim = Math.min(sw, sh), maxDim = Math.max(sw, sh);
+      // Phone: shortest side < 500px (e.g. 390x844, 412x915)
+      if (minDim < 500 && maxDim < 1200) return 'mobile';
+      // Tablet: shortest side 600-1024 (768x1024 iPad, 800x1280 Android tab)
+      // BUT: 768 height on Windows is a laptop, not a tablet — check UA for touch
+      if (minDim >= 600 && minDim <= 1024 && maxDim <= 1366 && /iPad|Tablet|Android|Touch/i.test(ua)) return 'tablet';
+    }
+  }
+
+  // Parse screen resolution
+  if (screenRes) {
+    const match = screenRes.match(/(\d+)x(\d+)/);
+    if (match) {
+      const w = parseInt(match[1]);
+      const h = parseInt(match[2]);
+
+      // MacBook detection (macOS + high-DPI small screen)
+      if (/Mac OS X/.test(ua)) {
+        // MacBooks have physical screens <= 16" with these resolutions
+        // Mac Studio/Pro displays are 27"+ at 5120x2880 or 5K/6K
+        if (h <= 1200 || w <= 1800) return 'laptop';
+        if (w === 2560 && h === 1600) return 'laptop'; // MacBook Air M2/M3
+        if (w === 3024 && h === 1964) return 'laptop'; // MacBook Pro 14"
+        if (w === 3456 && h === 2234) return 'laptop'; // MacBook Pro 16"
+        if (w === 5120 && h === 2880) return 'desktop'; // iMac/Pro Display XDR
+        // Default macOS = laptop (most Macs are laptops)
+        return 'laptop';
+      }
+
+      // Windows/Linux laptop heuristics
+      // Common laptop resolutions (inner/available area)
+      const laptopHeights = [720, 768, 800, 864, 900, 1024, 1080];
+      const laptopWidths = [1280, 1360, 1366, 1440, 1536, 1600, 1680];
+
+      // Height <= 900 is almost certainly a laptop (small screen)
+      if (h <= 900) return 'laptop';
+
+      // 1080p: could be either. Width helps distinguish.
+      // Laptop 1080p: 1920x1080 with devicePixelRatio > 1 OR small width
+      // But we don't have DPR on server. Use width as proxy:
+      // Most laptops scale to 1536x864 or 1366x768 internally
+      if (h === 1080 && laptopWidths.includes(w)) return 'laptop';
+
+      // Large screens = desktop
+      if (w >= 2560 && h >= 1440) return 'desktop';
+      if (w >= 1920 && h > 1080) return 'desktop';
+    }
+  }
+
+  // Fallback: no screen info, use UA defaults
+  return 'desktop';
+}
+
 // Generate a fingerprint-based anonymous user ID
 export function generateFingerprint(data: {
   userAgent?: string;
   screenRes?: string;
   language?: string;
   ip?: string;
+  timezone?: string;
 }): string {
-  // Simple hash-based fingerprint
-  const str = `${data.userAgent || ''}|${data.screenRes || ''}|${data.language || ''}|${data.ip || ''}`;
+  // Hash-based fingerprint from browser characteristics
+  const str = `${data.userAgent || ''}|${data.screenRes || ''}|${data.language || ''}|${data.timezone || ''}`;
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
