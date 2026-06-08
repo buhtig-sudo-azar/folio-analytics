@@ -56,3 +56,7 @@ db/
 local-*
 download/
 src/scripts/
+-e 
+# AI platform artifacts
+Caddyfile
+worklog.md
