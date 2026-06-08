@@ -45,22 +45,14 @@ next-env.d.ts
 server.log
 
 # AI/agent metadata
-.claude
-agent-ctx/
-worklog.md
 prompt
 
-# Skills directory (not part of project)
-/skills/
 
 # Scripts/examples not part of app
-/zscripts/
 examples/
 
 # Local DB
 db/
 local-*
-mini-services/
-Caddyfile
 download/
 src/scripts/
