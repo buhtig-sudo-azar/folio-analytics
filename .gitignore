@@ -56,7 +56,6 @@ prompt
 
 # Scripts/examples not part of app
 /zscripts/
-.zscripts/
 examples/
 
 # Local DB
